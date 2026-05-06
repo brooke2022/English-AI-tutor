@@ -1,0 +1,122 @@
+[
+  {
+    "id": "tutor-1",
+    "name": "Maria Santos",
+    "country": "Philippines",
+    "countryCode": "PH",
+    "avatar": "https://picsum.photos/seed/maria/200/200",
+    "tags": ["IELTS", "Business", "Conversational"],
+    "price": 12,
+    "trialPrice": 2,
+    "rating": 4.9,
+    "reviewCount": 128,
+    "timezone": "Asia/Manila",
+    "intro": "Hi! I'm Maria, a certified TEFL teacher with 5 years of experience helping professionals achieve their target IELTS scores and improve their business communication skills.",
+    "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    "availableSlots": [
+      "2026-03-27T08:00:00Z",
+      "2026-03-27T09:00:00Z",
+      "2026-03-28T10:00:00Z",
+      "2026-03-28T11:00:00Z"
+    ],
+    "reviews": [
+      {
+        "id": "rev-1",
+        "studentName": "Kenji",
+        "rating": 5,
+        "comment": "Maria is fantastic! She helped me get a band 7.5 in IELTS.",
+        "date": "2026-02-15T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": "tutor-2",
+    "name": "Rajesh Shrestha",
+    "country": "Nepal",
+    "countryCode": "NP",
+    "avatar": "https://picsum.photos/seed/rajesh/200/200",
+    "tags": ["Kids", "Beginners", "Conversational"],
+    "price": 8,
+    "trialPrice": 1,
+    "rating": 4.8,
+    "reviewCount": 85,
+    "timezone": "Asia/Kathmandu",
+    "intro": "Hello! I'm Rajesh. I specialize in teaching English to kids and beginners. My classes are fun, interactive, and tailored to your learning pace.",
+    "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    "availableSlots": [
+      "2026-03-27T12:00:00Z",
+      "2026-03-27T13:00:00Z",
+      "2026-03-29T08:00:00Z",
+      "2026-03-29T09:00:00Z"
+    ],
+    "reviews": [
+      {
+        "id": "rev-2",
+        "studentName": "Sarah",
+        "rating": 5,
+        "comment": "My son loves his classes with Rajesh. Highly recommended for kids!",
+        "date": "2026-03-10T14:30:00Z"
+      }
+    ]
+  },
+  {
+    "id": "tutor-3",
+    "name": "Ana Reyes",
+    "country": "Philippines",
+    "countryCode": "PH",
+    "avatar": "https://picsum.photos/seed/ana/200/200",
+    "tags": ["Pronunciation", "Conversational", "Job Interview"],
+    "price": 10,
+    "trialPrice": 2,
+    "rating": 5.0,
+    "reviewCount": 210,
+    "timezone": "Asia/Manila",
+    "intro": "Welcome! I'm Ana. If you want to sound more like a native speaker and ace your next job interview, I'm the right tutor for you. Let's practice together!",
+    "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    "availableSlots": [
+      "2026-03-28T06:00:00Z",
+      "2026-03-28T07:00:00Z",
+      "2026-03-30T14:00:00Z",
+      "2026-03-30T15:00:00Z"
+    ],
+    "reviews": [
+      {
+        "id": "rev-3",
+        "studentName": "Liu",
+        "rating": 5,
+        "comment": "Ana's pronunciation tips are game-changing. I feel much more confident now.",
+        "date": "2026-03-20T09:15:00Z"
+      }
+    ]
+  },
+  {
+    "id": "tutor-4",
+    "name": "Sunita Thapa",
+    "country": "Nepal",
+    "countryCode": "NP",
+    "avatar": "https://picsum.photos/seed/sunita/200/200",
+    "tags": ["Business", "IELTS", "Advanced"],
+    "price": 15,
+    "trialPrice": 3,
+    "rating": 4.9,
+    "reviewCount": 156,
+    "timezone": "Asia/Kathmandu",
+    "intro": "Greetings! I'm Sunita, an advanced English coach. I focus on high-level business English and intensive IELTS preparation for ambitious learners.",
+    "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    "availableSlots": [
+      "2026-03-27T15:00:00Z",
+      "2026-03-27T16:00:00Z",
+      "2026-03-31T10:00:00Z",
+      "2026-03-31T11:00:00Z"
+    ],
+    "reviews": [
+      {
+        "id": "rev-4",
+        "studentName": "Elena",
+        "rating": 5,
+        "comment": "Sunita is very professional. Her business English materials are top-notch.",
+        "date": "2026-03-22T16:45:00Z"
+      }
+    ]
+  }
+]
