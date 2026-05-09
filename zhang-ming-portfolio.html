@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>张铭 · 前端开发工程师</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Noto+Serif+SC:wght@300;400;600&family=Cabinet+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0a0a0a;
+    --white: #fafaf8;
+    --gray-100: #f4f4f2;
+    --gray-200: #e8e8e5;
+    --gray-400: #b0b0aa;
+    --gray-600: #6b6b65;
+    --gray-800: #2a2a28;
+    --accent: #0a0a0a;
+    --line: rgba(0,0,0,0.08);
+    --font-display: 'DM Serif Display', 'Noto Serif SC', serif;
+    --font-sans: 'Cabinet Grotesk', 'Noto Serif SC', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--white);
+    color: var(--black);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 1.25rem 3rem;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(250,250,248,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--line);
+  }
+  .nav-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    color: var(--black);
+  }
+  .nav-links { display: flex; align-items: center; gap: 2rem; }
+  .nav-links a {
+    font-size: 13px;
+    color: var(--gray-600);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--black); }
+  .lang-toggle {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border: 0.5px solid var(--gray-400);
+    border-radius: 100px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--black);
+    transition: all 0.2s;
+    letter-spacing: 0.06em;
+  }
+  .lang-toggle:hover { background: var(--black); color: var(--white); border-color: var(--black); }
+
+  /* ─── SECTIONS ─── */
+  section { padding: 7rem 0; }
+  .container { max-width: 1060px; margin: 0 auto; padding: 0 3rem; }
+
+  /* ─── HERO ─── */
+  #hero {
+    min-height: 100vh;
+    display: flex; align-items: center;
+    padding-top: 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-bg-text {
+    position: absolute;
+    bottom: -0.1em; right: -0.05em;
+    font-family: var(--font-display);
+    font-size: clamp(120px, 20vw, 260px);
+    color: transparent;
+    -webkit-text-stroke: 0.5px var(--gray-200);
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+    letter-spacing: -0.04em;
+  }
+  .hero-inner { position: relative; z-index: 1; }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--gray-600);
+    margin-bottom: 2.5rem;
+    text-transform: uppercase;
+  }
+  .hero-tag::before {
+    content: '';
+    display: inline-block;
+    width: 24px; height: 1px;
+    background: var(--gray-400);
+  }
+  .hero-name {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 8vw, 100px);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+  }
+  .hero-name em {
+    font-style: italic;
+    color: var(--gray-600);
+  }
+  .hero-desc {
+    font-size: clamp(16px, 2vw, 19px);
+    color: var(--gray-600);
+    max-width: 520px;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+  }
+  .hero-actions { display: flex; gap: 1rem; align-items: center; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 13px 28px;
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    border-radius: 100px;
+    transition: all 0.25s var(--ease);
+    border: none; cursor: pointer;
+  }
+  .btn-primary:hover { transform: translateY(-2px); background: var(--gray-800); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px;
+    border: 0.5px solid var(--gray-400);
+    color: var(--black);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 100px;
+    transition: all 0.25s var(--ease);
+  }
+  .btn-secondary:hover { border-color: var(--black); transform: translateY(-2px); }
+  .hero-stats {
+    display: flex; gap: 3rem;
+    margin-top: 5rem;
+    padding-top: 3rem;
+    border-top: 0.5px solid var(--line);
+  }
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 38px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--gray-600);
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── SECTION HEADER ─── */
+  .section-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 3.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 0.5px solid var(--line);
+  }
+  .section-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--gray-400);
+    letter-spacing: 0.1em;
+    margin-right: 1rem;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  /* ─── ABOUT ─── */
+  .about-grid { display: grid; grid-template-columns: 1fr 380px; gap: 6rem; align-items: start; }
+  .about-text p {
+    font-size: 17px;
+    color: var(--gray-800);
+    line-height: 1.8;
+    margin-bottom: 1.25rem;
+  }
+  .about-text p strong {
+    color: var(--black);
+    font-weight: 700;
+  }
+  .skills-block { display: flex; flex-direction: column; gap: 1.5rem; }
+  .skill-group-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .skill-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .skill-tag {
+    font-size: 12px;
+    padding: 5px 12px;
+    border: 0.5px solid var(--gray-200);
+    border-radius: 4px;
+    color: var(--gray-800);
+    background: var(--gray-100);
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+  }
+  .skill-tag.primary { background: var(--black); color: var(--white); border-color: var(--black); }
+
+  /* ─── WORK / PROJECTS ─── */
+  .project-featured {
+    background: var(--gray-100);
+    border: 0.5px solid var(--gray-200);
+    border-radius: 16px;
+    padding: 3rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  }
+  .project-featured:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
+  .project-featured::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle at top right, rgba(0,0,0,0.04), transparent 70%);
+    pointer-events: none;
+  }
+  .project-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--white);
+    background: var(--black);
+    padding: 4px 12px;
+    border-radius: 100px;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+  }
+  .project-badge.corp { background: var(--gray-600); }
+  .project-title {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 3vw, 36px);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+  .project-subtitle {
+    font-size: 14px;
+    color: var(--gray-600);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+  }
+  .project-desc {
+    font-size: 15px;
+    color: var(--gray-600);
+    line-height: 1.75;
+    max-width: 640px;
+    margin-bottom: 2rem;
+  }
+  .project-highlights { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 2rem; }
+  .highlight-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 14px;
+    color: var(--gray-800);
+    line-height: 1.5;
+  }
+  .highlight-item::before {
+    content: '→';
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--gray-400);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .project-tech { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
+  .tech-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border: 0.5px solid var(--gray-400);
+    border-radius: 4px;
+    color: var(--gray-600);
+    letter-spacing: 0.03em;
+  }
+  .project-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--black);
+    text-decoration: none;
+    border-bottom: 1px solid var(--black);
+    padding-bottom: 1px;
+    transition: opacity 0.2s;
+  }
+  .project-link:hover { opacity: 0.5; }
+
+  .projects-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .project-card {
+    background: var(--white);
+    border: 0.5px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 2rem;
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+    display: flex; flex-direction: column;
+  }
+  .project-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
+  .card-header { margin-bottom: 1rem; }
+  .card-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .card-company {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--gray-400);
+    letter-spacing: 0.08em;
+  }
+  .card-desc {
+    font-size: 14px;
+    color: var(--gray-600);
+    line-height: 1.7;
+    flex: 1;
+    margin-bottom: 1.25rem;
+  }
+  .card-metrics { display: flex; gap: 1.5rem; padding-top: 1rem; border-top: 0.5px solid var(--line); }
+  .metric { }
+  .metric-val { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+  .metric-desc { font-size: 11px; color: var(--gray-600); line-height: 1.3; }
+
+  /* ─── TIMELINE ─── */
+  .timeline { position: relative; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 128px; top: 0; bottom: 0;
+    width: 0.5px;
+    background: var(--gray-200);
+  }
+  .timeline-item { display: flex; gap: 3rem; margin-bottom: 3.5rem; position: relative; }
+  .timeline-date {
+    flex-shrink: 0;
+    width: 100px;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--gray-400);
+    letter-spacing: 0.06em;
+    padding-top: 4px;
+    line-height: 1.5;
+  }
+  .timeline-dot {
+    flex-shrink: 0;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 1.5px solid var(--gray-400);
+    margin-top: 6px;
+    margin-left: -4px;
+    position: relative; z-index: 1;
+    transition: all 0.2s;
+  }
+  .timeline-item:hover .timeline-dot { background: var(--black); border-color: var(--black); }
+  .timeline-content { flex: 1; padding-top: 0; }
+  .timeline-role {
+    font-weight: 800;
+    font-size: 17px;
+    margin-bottom: 2px;
+    letter-spacing: -0.01em;
+  }
+  .timeline-company {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--gray-600);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.04em;
+  }
+  .timeline-bullets { list-style: none; }
+  .timeline-bullets li {
+    font-size: 14px;
+    color: var(--gray-600);
+    padding: 4px 0 4px 1rem;
+    border-left: 2px solid var(--gray-200);
+    margin-bottom: 4px;
+    line-height: 1.6;
+  }
+
+  /* ─── CONTACT ─── */
+  #contact { background: var(--black); color: var(--white); }
+  #contact .section-title { color: var(--white); }
+  #contact .section-num { color: rgba(255,255,255,0.3); }
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; }
+  .contact-desc { font-size: 18px; color: rgba(255,255,255,0.6); line-height: 1.7; max-width: 440px; }
+  .contact-links { display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem; }
+  .contact-link {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--white);
+    transition: all 0.2s;
+    group: true;
+  }
+  .contact-link:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.25); }
+  .contact-link-label { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 2px; }
+  .contact-link-val { font-size: 15px; font-weight: 500; }
+  .contact-arrow { font-size: 20px; color: rgba(255,255,255,0.3); }
+  .available-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.7);
+    padding: 6px 16px;
+    border: 0.5px solid rgba(255,255,255,0.15);
+    border-radius: 100px;
+    margin-bottom: 2rem;
+  }
+  .available-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--black);
+    color: rgba(255,255,255,0.3);
+    padding: 2rem 3rem;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 0.5px solid rgba(255,255,255,0.05);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── ANIMATIONS ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links a:not(:last-child) { display: none; }
+    .container { padding: 0 1.5rem; }
+    .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .projects-grid { grid-template-columns: 1fr; }
+    .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .timeline::before { left: 0; }
+    .timeline-item { flex-direction: column; gap: 0.5rem; padding-left: 1.5rem; }
+    .timeline-date { text-align: left; width: auto; }
+    .timeline-dot { position: absolute; left: -4px; top: 4px; }
+    .hero-stats { flex-wrap: wrap; gap: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <a href="#" class="nav-name" data-zh="ZM.DEV" data-en="ZM.DEV">ZM.DEV</a>
+  <div class="nav-links">
+    <a href="#about" data-zh="关于" data-en="About">关于</a>
+    <a href="#work" data-zh="作品" data-en="Work">作品</a>
+    <a href="#experience" data-zh="经历" data-en="Experience">经历</a>
+    <a href="#contact" data-zh="联系" data-en="Contact">联系</a>
+    <button class="lang-toggle" id="langToggle" onclick="toggleLang()">EN</button>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section id="hero">
+  <div class="hero-bg-text">MING</div>
+  <div class="container hero-inner">
+    <div class="hero-tag" data-zh="前端开发工程师 · 深圳" data-en="Frontend Engineer · Shenzhen, China">前端开发工程师 · 深圳</div>
+    <h1 class="hero-name">
+      张铭<br><em data-zh="前端开发 · AI全栈 · Agent构建者" data-en="Frontend · AI Fullstack">前端开发 · AI全栈</em>
+    </h1>
+    <p class="hero-desc" data-zh="4年大厂前端工程师，历经腾讯云数字孪生与虾皮物流供应链。熟练 Vue / React / Next.js 全系，正在用 AI 工具探索从工程师到全栈产品构建者的边界。" data-en="4-year veteran at Tencent Cloud & Shopee, shipping production frontends across IoT, digital twin, and logistics domains. Fluent in Vue, React and Next.js — now building AI-powered products from zero to one.">
+      4年大厂前端工程师，历经腾讯云数字孪生与虾皮物流供应链。熟练 Vue / React / Next.js 全系，正在用 AI 工具探索从工程师到全栈产品构建者的边界。
+    </p>
+    <div class="hero-actions">
+      <a href="#work" class="btn-primary" data-zh="查看作品 →" data-en="View Work →">查看作品 →</a>
+      <a href="mailto:13883289237@163.com" class="btn-secondary" data-zh="联系我" data-en="Get in touch">联系我</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">4+</div>
+        <div class="stat-label" data-zh="年大厂经验" data-en="Years at top companies">年大厂经验</div>
+      </div>
+      <div>
+        <div class="stat-num">2</div>
+        <div class="stat-label" data-zh="大厂 · 腾讯 & 虾皮" data-en="Tier-1 companies">大厂 · 腾讯 & 虾皮</div>
+      </div>
+      <div>
+        <div class="stat-num">6+</div>
+        <div class="stat-label" data-zh="核心项目交付" data-en="Core projects shipped">核心项目交付</div>
+      </div>
+      <div>
+        <div class="stat-num">0→1</div>
+        <div class="stat-label" data-zh="AI产品独立构建" data-en="AI product built solo">AI产品独立构建</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ABOUT ─── -->
+<section id="about">
+  <div class="container">
+    <div class="section-header reveal">
+      <div>
+        <span class="section-num">01 —</span>
+        <span class="section-title" data-zh="关于我" data-en="About">关于我</span>
+      </div>
+    </div>
+    <div class="about-grid">
+      <div class="about-text reveal">
+        <p data-zh="我叫张铭，是一名拥有 <strong>4年大厂经验</strong>的前端开发工程师。毕业后先后就职于<strong>腾讯云（数字孪生方向）</strong>和<strong>虾皮物流（供应链方向）</strong>，在复杂 B 端系统的研发、性能优化和组件工程领域积累了扎实的经验。"
+               data-en="I'm Ming Zhang, a frontend engineer with <strong>4 years of experience</strong> at top-tier tech companies. I've shipped production systems at <strong>Tencent Cloud (Digital Twin)</strong> and <strong>Shopee (Supply Chain Logistics)</strong>, building complex B-side platforms from design review to delivery.">
+          我叫张铭，是一名拥有 <strong>4年大厂经验</strong>的前端开发工程师。毕业后先后就职于<strong>腾讯云（数字孪生方向）</strong>和<strong>虾皮物流（供应链方向）</strong>，在复杂 B 端系统的研发、性能优化和组件工程领域积累了扎实的经验。
+        </p>
+        <p data-zh="在腾讯云，我曾独立担任边缘接入工具的前端 Owner，全程参与需求评审、原型设计到上线交付的完整链路，并在内部进行技术分享。在虾皮，我主导了轮询治理工作，显著减少了冗余网络请求，提升了复杂调度系统的实时响应能力。"
+           data-en="At Tencent Cloud, I owned the frontend of an edge integration tool end-to-end — from PRD to deployment — and gave internal tech talks. At Shopee, I led a polling governance initiative that reduced redundant network requests and improved real-time responsiveness across a complex logistics scheduling system.">
+          在腾讯云，我曾独立担任边缘接入工具的前端 Owner，全程参与需求评审、原型设计到上线交付的完整链路，并在内部进行技术分享。在虾皮，我主导了轮询治理工作，显著减少了冗余网络请求，提升了复杂调度系统的实时响应能力。
+        </p>
+        <p data-zh="目前我正积极探索 AI 辅助开发，并独立完成了 Dare Speak 这个 AI 驱动的跨境教育平台。我相信优秀的工程师不只写代码，更懂产品与用户。"
+           data-en="I'm now exploring AI-native development workflows. I independently built Dare Speak — an AI-powered cross-border education platform — as full-stack lead. I believe great engineers don't just write code; they think in products.">
+          目前我正积极探索 AI 辅助开发，并独立完成了 Dare Speak 这个 AI 驱动的跨境教育平台。我相信优秀的工程师不只写代码，更懂产品与用户。
+        </p>
+      </div>
+      <div class="skills-block reveal reveal-delay-2">
+        <div>
+          <div class="skill-group-label" data-zh="精通" data-en="Expert">精通</div>
+          <div class="skill-tags">
+            <span class="skill-tag primary">Vue 2/3</span>
+            <span class="skill-tag primary">React</span>
+            <span class="skill-tag primary">TypeScript</span>
+            <span class="skill-tag primary">Next.js</span>
+          </div>
+        </div>
+        <div>
+          <div class="skill-group-label" data-zh="熟悉" data-en="Proficient">熟悉</div>
+          <div class="skill-tags">
+            <span class="skill-tag">Tailwind CSS</span>
+            <span class="skill-tag">Zustand</span>
+            <span class="skill-tag">Webpack</span>
+            <span class="skill-tag">Node.js / NestJS</span>
+            <span class="skill-tag">Echarts</span>
+            <span class="skill-tag">Shadcn/UI</span>
+          </div>
+        </div>
+        <div>
+          <div class="skill-group-label" data-zh="工具链 & 工程" data-en="Tooling & Engineering">工具链 & 工程</div>
+          <div class="skill-tags">
+            <span class="skill-tag">Git</span>
+            <span class="skill-tag">ESLint</span>
+            <span class="skill-tag">Cursor</span>
+            <span class="skill-tag">Copilot</span>
+            <span class="skill-tag">Figma</span>
+          </div>
+        </div>
+        <div>
+          <div class="skill-group-label" data-zh="UI框架经验" data-en="UI Frameworks">UI框架经验</div>
+          <div class="skill-tags">
+            <span class="skill-tag">ElementUI</span>
+            <span class="skill-tag">TDesign</span>
+            <span class="skill-tag">Shadcn</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WORK ─── -->
+<section id="work" style="background: var(--gray-100);">
+  <div class="container">
+    <div class="section-header reveal">
+      <div>
+        <span class="section-num">02 —</span>
+        <span class="section-title" data-zh="作品展示" data-en="Selected Work">作品展示</span>
+      </div>
+    </div>
+
+    <!-- Featured: Dare Speak -->
+    <div class="project-featured reveal">
+      <div class="project-badge">✦ <span data-zh="AI 项目 · 全栈独立开发" data-en="AI Project · Full-Stack Solo">AI 项目 · 全栈独立开发</span></div>
+      <h2 class="project-title">Dare Speak</h2>
+      <p class="project-subtitle" data-zh="AI 驱动的跨境英语教育撮合平台" data-en="AI-Powered Cross-Border English Education Marketplace">AI 驱动的跨境英语教育撮合平台</p>
+      <p class="project-desc" data-zh="一款连接菲律宾、尼泊尔外教资源与国内英语学员的双边平台，涵盖外教市场发现、AI 智能师生匹配、排课预约与差价结算闭环。交互设计借鉴 Airbnb 的极简功能主义。"
+         data-en="A bilateral marketplace connecting Filipino and Nepali English teachers with domestic learners. Features include teacher discovery, AI-powered matching, scheduling, cross-timezone booking, and a revenue-split billing engine. UX inspired by Airbnb's functional minimalism.">
+        一款连接菲律宾、尼泊尔外教资源与国内英语学员的双边平台，涵盖外教市场发现、AI 智能师生匹配、排课预约与差价结算闭环。交互设计借鉴 Airbnb 的极简功能主义。
+      </p>
+      <div class="project-highlights">
+        <div class="highlight-item" data-zh="主导从 0 到 1 的完整产品推进，独立输出前端 PRD，完成 Hero 引导区、教师展示页、订单中台的系统设计与开发" data-en="Led 0→1 product development solo: wrote frontend PRD, architected and built Hero section, Teacher Marketplace, and Order Management Hub">
+          主导从 0 到 1 的完整产品推进，独立输出前端 PRD，完成 Hero 引导区、教师展示页、订单中台的系统设计与开发
+        </div>
+        <div class="highlight-item" data-zh="深度应用 Cursor & Copilot 进行 AI 协同开发，极大压缩 MVP 研发周期与试错成本" data-en="Deeply integrated Cursor & Copilot into the dev workflow, dramatically reducing MVP iteration cycles">
+          深度应用 Cursor & Copilot 进行 AI 协同开发，极大压缩 MVP 研发周期与试错成本
+        </div>
+        <div class="highlight-item" data-zh="引入 Zustand 解决跨时区预约、动态课表等高复杂度状态管理，保障数据一致性" data-en="Used Zustand to handle complex cross-timezone scheduling state with high data consistency requirements">
+          引入 Zustand 解决跨时区预约、动态课表等高复杂度状态管理，保障数据一致性
+        </div>
+        <div class="highlight-item" data-zh="技术手段落地 AI 智能匹配前端交互，并打通差额利润结算商业闭环" data-en="Implemented AI-matching UI interactions and built the end-to-end differential billing business logic">
+          技术手段落地 AI 智能匹配前端交互，并打通差额利润结算商业闭环
+        </div>
+      </div>
+      <div class="project-tech">
+        <span class="tech-pill">Next.js App Router</span>
+        <span class="tech-pill">TypeScript</span>
+        <span class="tech-pill">Tailwind CSS</span>
+        <span class="tech-pill">Shadcn/UI</span>
+        <span class="tech-pill">Zustand</span>
+        <span class="tech-pill">Cursor / Copilot</span>
+      </div>
+      <a href="#" class="project-link" data-zh="查看项目 ↗" data-en="View Project ↗">查看项目 ↗</a>
+    </div>
+
+    <!-- Corp Projects Grid -->
+    <div class="projects-grid">
+      <!-- Shopee Pickup -->
+      <div class="project-card reveal">
+        <div class="card-header">
+          <div class="project-badge corp" style="margin-bottom: 1rem;">Shopee · Supply Chain</div>
+          <div class="card-title">SPX Pickup System</div>
+          <div class="card-company" data-zh="深圳虾皮物流 · 2024—2026" data-en="Shopee Xpress · 2024—2026">深圳虾皮物流 · 2024—2026</div>
+        </div>
+        <p class="card-desc" data-zh="基于自动化物流与智能调度的一站式揽收管理系统。负责 Pickup Window Management、Point Management、Wave Rule Configuration 等核心模块，以及 Quick Pickup 任务管理模块的设计与实现。"
+           data-en="Full-featured pickup management system for automated logistics and intelligent scheduling. Owned core modules including Window Management, Point Management, Wave Rule Config, and the Quick Pickup task flow.">
+          基于自动化物流与智能调度的一站式揽收管理系统。负责 Pickup Window Management、Point Management、Wave Rule Configuration 等核心模块，以及 Quick Pickup 任务管理模块的设计与实现。
+        </p>
+        <div class="project-highlights" style="margin-bottom: 1.25rem;">
+          <div class="highlight-item" data-zh="主导轮询治理，减少冗余网络请求，显著提升页面实时响应能力" data-en="Led polling governance initiative — reduced redundant requests, improved real-time response latency">主导轮询治理，减少冗余网络请求，显著提升页面实时响应能力</div>
+          <div class="highlight-item" data-zh="优化状态机配置，提升复杂任务流的稳定性与可维护性" data-en="Optimized state machine config for complex task flows, improving stability and maintainability">优化状态机配置，提升复杂任务流的稳定性与可维护性</div>
+        </div>
+        <div class="project-tech">
+          <span class="tech-pill">Vue</span>
+          <span class="tech-pill">React</span>
+          <span class="tech-pill">TypeScript</span>
+          <span class="tech-pill">Echarts</span>
+        </div>
+      </div>
+
+      <!-- Tencent Digital Twin -->
+      <div class="project-card reveal reveal-delay-1">
+        <div class="card-header">
+          <div class="project-badge corp" style="margin-bottom: 1rem;">Tencent Cloud · 数字孪生</div>
+          <div class="card-title" data-zh="腾讯孪生底座" data-en="Tencent Digital Twin Platform">腾讯孪生底座</div>
+          <div class="card-company" data-zh="腾讯云 · 2022—2024" data-en="Tencent Cloud · 2022—2024">腾讯云 · 2022—2024</div>
+        </div>
+        <p class="card-desc" data-zh="以物联感知、空间构造与时空数据融合为核心，面向建筑、园区、城市等场景的开放式数字孪生底座。负责门户管理平台与运维管理平台的系统框架搭建及功能开发，全流程把控从需求评审到上线。"
+           data-en="An open digital twin platform built on IoT sensing, spatial construction, and spatiotemporal data fusion — serving buildings, campuses, and smart city scenarios. Owned the portal management and ops management platforms end-to-end.">
+          以物联感知、空间构造与时空数据融合为核心，面向建筑、园区、城市等场景的开放式数字孪生底座。负责门户管理平台与运维管理平台的系统框架搭建及功能开发，全流程把控从需求评审到上线。
+        </p>
+        <div class="project-highlights" style="margin-bottom: 1.25rem;">
+          <div class="highlight-item" data-zh="主导公用组件封装与代码优化，供多位前端同事使用，规范团队代码结构" data-en="Built shared component library used across the team, standardized codebase patterns">主导公用组件封装与代码优化，供多位前端同事使用，规范团队代码结构</div>
+        </div>
+        <div class="project-tech">
+          <span class="tech-pill">Vue 2/3</span>
+          <span class="tech-pill">Vuex</span>
+          <span class="tech-pill">TDesign</span>
+          <span class="tech-pill">Echarts</span>
+          <span class="tech-pill">Webpack</span>
+        </div>
+      </div>
+
+      <!-- Edge Tool -->
+      <div class="project-card reveal reveal-delay-2">
+        <div class="card-header">
+          <div class="project-badge corp" style="margin-bottom: 1rem;">Tencent Cloud · IoT</div>
+          <div class="card-title" data-zh="边缘接入工具" data-en="Edge Integration Tool">边缘接入工具</div>
+          <div class="card-company" data-zh="腾讯云 · 前端 Owner" data-en="Tencent Cloud · Frontend Owner">腾讯云 · 前端 Owner</div>
+        </div>
+        <p class="card-desc" data-zh="腾讯孪生简报（Banber）旗下数据可视化工具，所见即所得的拖拽式图表与交互组件编辑器。作为前端 Owner，独立负责从需求评审、原型设计到前端实现与 Node 端接口开发的全链路。"
+           data-en="A WYSIWYG data visualization editor under Tencent's digital twin suite, offering drag-and-drop charts, interaction components, and visual templates. Served as frontend owner across the entire delivery lifecycle, including Node.js API development.">
+          腾讯孪生简报（Banber）旗下数据可视化工具，所见即所得的拖拽式图表与交互组件编辑器。作为前端 Owner，独立负责从需求评审、原型设计到前端实现与 Node 端接口开发的全链路。
+        </p>
+        <div class="project-highlights" style="margin-bottom: 1.25rem;">
+          <div class="highlight-item" data-zh="在公司内进行技术分享，总结业务难点并整理成博文" data-en="Delivered internal tech talks; documented complex problem-solving as blog posts">在公司内进行技术分享，总结业务难点并整理成博文</div>
+        </div>
+        <div class="project-tech">
+          <span class="tech-pill">Vue 3</span>
+          <span class="tech-pill">TypeScript</span>
+          <span class="tech-pill">NestJS</span>
+          <span class="tech-pill">ElementUI</span>
+        </div>
+      </div>
+
+      <!-- Weiling -->
+      <div class="project-card reveal reveal-delay-3">
+        <div class="card-header">
+          <div class="project-badge corp" style="margin-bottom: 1rem;">Tencent Cloud · 微瓴 (实习)</div>
+          <div class="card-title" data-zh="微瓴积木 & 超级管理平台" data-en="Weiling Platform">微瓴积木 & 超级管理平台</div>
+          <div class="card-company" data-zh="腾讯云 · 2021—2022 实习" data-en="Tencent Cloud · 2021—2022 Intern">腾讯云 · 2021—2022 实习</div>
+        </div>
+        <p class="card-desc" data-zh="智慧空间管理平台与小程序开发。参与微瓴积木平台和超级管理平台的系统界面开发与迭代，使用 Vue 全家桶完成组件渲染及更新，并负责微瓴小程序的日常开发。"
+           data-en="Smart space management platforms and mini-program development at Tencent's Weiling team. Contributed to the Weiling Building Block platform and Super Admin system, plus a WeChat mini-program.">
+          智慧空间管理平台与小程序开发。参与微瓴积木平台和超级管理平台的系统界面开发与迭代，使用 Vue 全家桶完成组件渲染及更新，并负责微瓴小程序的日常开发。
+        </p>
+        <div class="project-tech">
+          <span class="tech-pill">Vue</span>
+          <span class="tech-pill">Vuex</span>
+          <span class="tech-pill">小程序</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── EXPERIENCE TIMELINE ─── -->
+<section id="experience">
+  <div class="container">
+    <div class="section-header reveal">
+      <div>
+        <span class="section-num">03 —</span>
+        <span class="section-title" data-zh="工作经历" data-en="Experience">工作经历</span>
+      </div>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item reveal">
+        <div class="timeline-date">2024.07<br>→ 2026.01</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-role" data-zh="深圳虾皮物流有限公司" data-en="Shopee Xpress (Shenzhen)">深圳虾皮物流有限公司</div>
+          <div class="timeline-company" data-zh="前端开发工程师 · Supply Chain / SPX Team" data-en="Frontend Engineer · Supply Chain / SPX Team">前端开发工程师 · Supply Chain / SPX Team</div>
+          <ul class="timeline-bullets">
+            <li data-zh="负责 SPX Pickup 域、SmartSorting 域的日常开发迭代，与后端、产品、测试团队紧密协作" data-en="Owned Pickup and SmartSorting domain frontend, collaborating closely with backend, product, and QA">负责 SPX Pickup 域、SmartSorting 域的日常开发迭代，与后端、产品、测试团队紧密协作</li>
+            <li data-zh="主导轮询治理工作，减少冗余网络请求，提升页面实时响应能力" data-en="Led polling governance initiative — eliminated redundant API calls, boosted real-time responsiveness">主导轮询治理工作，减少冗余网络请求，提升页面实时响应能力</li>
+            <li data-zh="优化前端代码结构，封装复用组件，提升团队整体开发效率" data-en="Refactored frontend architecture and built reusable component library to improve team velocity">优化前端代码结构，封装复用组件，提升团队整体开发效率</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="timeline-item reveal">
+        <div class="timeline-date">2022.07<br>→ 2024.04</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-role" data-zh="腾讯云" data-en="Tencent Cloud">腾讯云</div>
+          <div class="timeline-company" data-zh="前端开发工程师 · 数字孪生事业部" data-en="Frontend Engineer · Digital Twin BU">前端开发工程师 · 数字孪生事业部</div>
+          <ul class="timeline-bullets">
+            <li data-zh="独立担任边缘接入工具前端 Owner，全链路参与需求评审、原型设计、功能实现与 Node 端接口开发" data-en="Sole frontend owner of Edge Integration Tool — handled PRD, UI design, implementation, and Node.js APIs">独立担任边缘接入工具前端 Owner，全链路参与需求评审、原型设计、功能实现与 Node 端接口开发</li>
+            <li data-zh="负责腾讯孪生底座多个版本迭代开发，门户管理与运维管理平台框架搭建" data-en="Delivered multiple versions of the Digital Twin base platform; built portal and ops management frameworks">负责腾讯孪生底座多个版本迭代开发，门户管理与运维管理平台框架搭建</li>
+            <li data-zh="进行项目瘦身，封装公用组件，规范代码结构，在内部进行技术分享" data-en="Bundle size optimization; built shared component library; delivered internal tech talks">进行项目瘦身，封装公用组件，规范代码结构，在内部进行技术分享</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="timeline-item reveal">
+        <div class="timeline-date">2021.05<br>→ 2022.03</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-role" data-zh="腾讯云" data-en="Tencent Cloud">腾讯云</div>
+          <div class="timeline-company" data-zh="前端开发工程师（实习）· 微瓴事业部" data-en="Frontend Engineer Intern · Weiling BU">前端开发工程师（实习）· 微瓴事业部</div>
+          <ul class="timeline-bullets">
+            <li data-zh="参与微瓴积木平台和超级管理平台的系统界面开发" data-en="Contributed to Weiling Building Block platform and Super Admin system UI development">参与微瓴积木平台和超级管理平台的系统界面开发</li>
+            <li data-zh="使用 Vue 全家桶完成项目迭代，负责智慧空间微瓴小程序日常开发" data-en="Delivered sprint iterations using Vue ecosystem; maintained the Weiling smart space mini-program">使用 Vue 全家桶完成项目迭代，负责智慧空间微瓴小程序日常开发</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="timeline-item reveal">
+        <div class="timeline-date">2018.09<br>→ 2022.06</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-role" data-zh="重庆邮电大学" data-en="Chongqing University of Posts and Telecommunications">重庆邮电大学</div>
+          <div class="timeline-company" data-zh="智能科学与技术 · 本科 · GPA 3.1/4.0" data-en="B.Sc. Intelligent Science & Technology · GPA 3.1/4.0">智能科学与技术 · 本科 · GPA 3.1/4.0</div>
+          <ul class="timeline-bullets">
+            <li data-zh="计算机科学与技术学院，自学前端，具备较强自学能力" data-en="College of Computer Science; self-taught frontend engineering from ground up">计算机科学与技术学院，自学前端，具备较强自学能力</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CONTACT ─── -->
+<section id="contact">
+  <div class="container">
+    <div class="section-header reveal" style="border-bottom-color: rgba(255,255,255,0.08);">
+      <div>
+        <span class="section-num">04 —</span>
+        <span class="section-title" data-zh="联系我" data-en="Get in Touch">联系我</span>
+      </div>
+    </div>
+    <div class="contact-grid">
+      <div class="reveal">
+        <div class="available-badge">
+          <span class="available-dot"></span>
+          <span data-zh="开放机会 · 2025" data-en="Open to opportunities · 2025">开放机会 · 2025</span>
+        </div>
+        <p class="contact-desc" data-zh="如果你在寻找一名有大厂经验、对 AI 产品充满热情、能快速上手复杂前端系统的工程师，欢迎联系我。" data-en="If you're looking for an engineer with big-tech experience, genuine excitement about AI products, and the ability to ramp up fast on complex frontends — let's talk.">
+          如果你在寻找一名有大厂经验、对 AI 产品充满热情、能快速上手复杂前端系统的工程师，欢迎联系我。
+        </p>
+      </div>
+      <div class="contact-links reveal reveal-delay-1">
+        <a href="mailto:13883289237@163.com" class="contact-link">
+          <div>
+            <div class="contact-link-label" data-zh="邮件" data-en="Email">邮件</div>
+            <div class="contact-link-val">13883289237@163.com</div>
+          </div>
+          <span class="contact-arrow">→</span>
+        </a>
+        <a href="tel:+8613883289237" class="contact-link">
+          <div>
+            <div class="contact-link-label" data-zh="电话" data-en="Phone">电话</div>
+            <div class="contact-link-val">138 8328 9237</div>
+          </div>
+          <span class="contact-arrow">→</span>
+        </a>
+        <a href="https://github.com/brooke2022" class="contact-link" target="_blank" rel="noopener noreferrer">
+          <div>
+            <div class="contact-link-label">GitHub</div>
+            <div class="contact-link-val">github.com/brooke2022</div>
+          </div>
+          <span class="contact-arrow">→</span>
+        </a>
+        <a href="https://www.linkedin.com/in/铭-张-a2499530a" class="contact-link" target="_blank" rel="noopener noreferrer">
+          <div>
+            <div class="contact-link-label">LinkedIn</div>
+            <div class="contact-link-val">linkedin.com/in/铭-张-a2499530a</div>
+          </div>
+          <span class="contact-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span data-zh="© 2025 张铭 · 前端开发工程师" data-en="© 2025 Ming Zhang · Frontend Engineer">© 2025 张铭 · 前端开发工程师</span>
+  <span data-zh="用心构建 · 深圳" data-en="Built with intention · Shenzhen">用心构建 · 深圳</span>
+</footer>
+
+<script>
+  // ─── LANGUAGE ───
+  let lang = 'zh';
+
+  function detectLang() {
+    const saved = localStorage.getItem('portfolio-lang');
+    if (saved) { lang = saved; applyLang(); return; }
+    fetch('https://ip-api.com/json/?fields=countryCode')
+      .then(r => r.json())
+      .then(d => { lang = d.countryCode === 'CN' ? 'zh' : 'en'; applyLang(); })
+      .catch(() => { lang = navigator.language.startsWith('zh') ? 'zh' : 'en'; applyLang(); });
+  }
+
+  function applyLang() {
+    document.querySelectorAll('[data-zh]').forEach(el => {
+      const text = el.getAttribute('data-' + lang);
+      if (text) el.innerHTML = text;
+    });
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    document.title = lang === 'zh' ? '张铭 · 前端开发工程师' : 'Ming Zhang · Frontend Engineer';
+    document.getElementById('langToggle').textContent = lang === 'zh' ? 'EN' : '中';
+  }
+
+  function toggleLang() {
+    lang = lang === 'zh' ? 'en' : 'zh';
+    localStorage.setItem('portfolio-lang', lang);
+    applyLang();
+  }
+
+  // ─── SCROLL REVEAL ───
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // ─── NAV ACTIVE ───
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+  const scrollObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => {
+          a.style.color = a.getAttribute('href') === '#' + e.target.id ? 'var(--black)' : '';
+        });
+      }
+    });
+  }, { threshold: 0.5 });
+  sections.forEach(s => scrollObserver.observe(s));
+
+  detectLang();
+</script>
+</body>
+</html>
