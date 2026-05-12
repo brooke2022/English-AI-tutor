@@ -1,10 +1,8 @@
 import { Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Teacher } from '../types';
 
-/**
- * Helper to convert a 2-letter country code (e.g., "PH") into a flag emoji (🇵🇭)
- */
 function getFlagEmoji(countryCode: string) {
   const codePoints = countryCode
     .toUpperCase()
@@ -14,9 +12,9 @@ function getFlagEmoji(countryCode: string) {
 }
 
 export default function TeacherCard({ teacher }: { teacher: Teacher }) {
+  const { t } = useTranslation();
   return (
     <div className="group flex flex-col bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer">
-      {/* Image Section (Airbnb style aspect ratio) */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         <img
           src={teacher.avatar}
@@ -24,16 +22,13 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           referrerPolicy="no-referrer"
         />
-        
-        {/* Trial Badge */}
         {teacher.trialPrice && (
           <div className="absolute top-3 left-3 bg-emerald-500/90 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-            <span>${teacher.trialPrice} Trial</span>
+            <span>{t('teacherCard.trial', { price: teacher.trialPrice })}</span>
           </div>
         )}
       </div>
 
-      {/* Content Section (Notion clean typography style) */}
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-1">
           <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
@@ -53,7 +48,6 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
           {teacher.intro}
         </p>
 
-        {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
           {teacher.tags.slice(0, 3).map((tag) => (
             <span
@@ -65,11 +59,10 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
           ))}
         </div>
 
-        {/* Footer */}
         <div className="pt-4 border-t border-gray-50 flex items-center justify-between mt-auto">
           <div className="flex flex-col">
             <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">
-              Hourly Rate
+              {t('teacherCard.hourlyRate')}
             </span>
             <span className="text-lg font-bold text-gray-900">
               ${teacher.price}
@@ -79,7 +72,7 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
             to={`/teachers/${teacher.id}`}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
           >
-            View Profile
+            {t('teacherCard.viewProfile')}
           </Link>
         </div>
       </div>

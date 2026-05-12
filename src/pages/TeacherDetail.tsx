@@ -1,35 +1,35 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Video, Clock, Globe, Calendar as CalendarIcon, CheckCircle2 } from 'lucide-react';
+import { Star, Video, Clock, Globe, Calendar as CalendarIcon, CheckCircle2, GraduationCap, Award, MessageCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useStore } from '../store/useStore';
 import { formatToLocalTime, formatToLocalDate, groupSlotsByDay, getUserTimezone } from '../utils/time';
-import teachersData from '../data/teachers.json';
-import { Teacher } from '../types';
+import { useTeachersStore } from '../store/useTeachersStore';
 
 export default function TeacherDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const addLesson = useStore((state) => state.addLesson);
-  
-  const teacher = (teachersData as Teacher[]).find((t) => t.id === id);
+
+  const teacher = useTeachersStore((s) => s.teachers.find((t) => t.id === id && t.status === 'approved'));
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const groupedSlots = teacher ? groupSlotsByDay(teacher.availableSlots) : {};
+  const days = Object.keys(groupedSlots);
+  const [selectedDay, setSelectedDay] = useState(days[0] ?? '');
 
   if (!teacher) {
     return <div className="p-12 text-center text-gray-500">Teacher not found</div>;
   }
 
-  const groupedSlots = groupSlotsByDay(teacher.availableSlots);
-  const days = Object.keys(groupedSlots);
-  const [selectedDay, setSelectedDay] = useState(days[0]);
-
   const handleBook = () => {
     if (!selectedSlot) return;
-    
+
     setIsBooking(true);
-    
-    // Simulate API call
+
     setTimeout(() => {
       addLesson({
         id: `lesson-${Date.now()}`,
@@ -38,37 +38,52 @@ export default function TeacherDetail() {
         type: 'Trial Lesson',
         status: 'upcoming'
       });
-      
+
       setIsBooking(false);
       setShowSuccess(true);
-      
-      // Hide success message and redirect after 2s
+
       setTimeout(() => {
         setShowSuccess(false);
         navigate('/my-courses');
-      }, 2000);
+      }, 4000);
     }, 800);
   };
+
+  const isYouTube = teacher.videoUrl && (teacher.videoUrl.includes('youtube.com') || teacher.videoUrl.includes('youtu.be'));
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Column: Profile & Video */}
         <div className="lg:col-span-2 space-y-8">
-          
-          {/* Video Placeholder */}
-          <div className="bg-gray-900 rounded-2xl aspect-video relative overflow-hidden shadow-lg flex items-center justify-center group cursor-pointer">
-            <img 
-              src={teacher.avatar} 
-              alt={teacher.name} 
-              className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-30 transition-opacity"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-black/20" />
-            <div className="relative z-10 w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Video className="w-8 h-8 text-white ml-1" />
-            </div>
+
+          {/* Video */}
+          <div className="bg-gray-900 rounded-2xl aspect-video relative overflow-hidden shadow-lg">
+            {isYouTube ? (
+              <iframe
+                src={teacher.videoUrl.replace('watch?v=', 'embed/')}
+                className="w-full h-full"
+                allowFullScreen
+                title={`${teacher.name} intro video`}
+              />
+            ) : teacher.videoUrl ? (
+              <video src={teacher.videoUrl} controls className="w-full h-full object-cover" />
+            ) : (
+              <>
+                <img
+                  src={teacher.avatar}
+                  alt={teacher.name}
+                  className="absolute inset-0 w-full h-full object-cover opacity-40"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
+                    <Video className="w-8 h-8 text-white ml-1" />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Profile Info */}
@@ -87,14 +102,31 @@ export default function TeacherDetail() {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-gray-900">${teacher.price}</div>
-                <div className="text-sm text-gray-500">per hour</div>
+                <div className="text-sm text-gray-500">{t('teacherDetail.perHour')}</div>
               </div>
             </div>
 
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">About Me</h2>
+            {(teacher.yearsExp || teacher.education) && (
+              <div className="flex flex-wrap gap-4 mb-6">
+                {teacher.yearsExp && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-xl text-sm text-blue-700 font-medium">
+                    <Award className="w-4 h-4" />
+                    {t('teacherDetail.yearsExp', { n: teacher.yearsExp })}
+                  </div>
+                )}
+                {teacher.education && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-violet-50 rounded-xl text-sm text-violet-700 font-medium">
+                    <GraduationCap className="w-4 h-4" />
+                    {teacher.education}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('teacherDetail.aboutMe')}</h2>
             <p className="text-gray-600 leading-relaxed mb-8">{teacher.intro}</p>
 
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Specialties</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('teacherDetail.specialties')}</h2>
             <div className="flex flex-wrap gap-2">
               {teacher.tags.map(tag => (
                 <span key={tag} className="px-3 py-1.5 bg-blue-50 text-blue-700 font-medium rounded-lg text-sm">
@@ -103,10 +135,10 @@ export default function TeacherDetail() {
               ))}
             </div>
           </div>
-          
+
           {/* Reviews Section */}
           <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Student Reviews</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('teacherDetail.reviews')}</h2>
             <div className="space-y-6">
               {teacher.reviews?.map(review => (
                 <div key={review.id} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
@@ -131,14 +163,13 @@ export default function TeacherDetail() {
           <div className="sticky top-24 bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
             <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
               <CalendarIcon className="w-5 h-5 text-blue-600" />
-              Book a Lesson
+              {t('teacherDetail.bookLesson')}
             </h3>
 
-            {/* Timezone Info */}
             <div className="bg-gray-50 rounded-lg p-3 mb-6 flex items-start gap-2 text-sm text-gray-600 border border-gray-100">
               <Clock className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
               <p>
-                Times shown in your local timezone:<br/>
+                {t('teacherDetail.timesShownIn')}<br/>
                 <strong className="text-gray-900">{getUserTimezone()}</strong>
               </p>
             </div>
@@ -150,8 +181,8 @@ export default function TeacherDetail() {
                   key={day}
                   onClick={() => { setSelectedDay(day); setSelectedSlot(null); }}
                   className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                    selectedDay === day 
-                      ? 'bg-gray-900 text-white shadow-md' 
+                    selectedDay === day
+                      ? 'bg-gray-900 text-white shadow-md'
                       : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
@@ -177,7 +208,6 @@ export default function TeacherDetail() {
               ))}
             </div>
 
-            {/* Action Button */}
             <button
               onClick={handleBook}
               disabled={!selectedSlot || isBooking}
@@ -186,25 +216,38 @@ export default function TeacherDetail() {
               {isBooking ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                `Book for $${teacher.trialPrice || teacher.price}`
+                t('teacherDetail.bookFor', { price: teacher.trialPrice || teacher.price })
               )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Success Toast / Modal Overlay */}
+      {/* Success Toast */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-sm w-full text-center animate-in fade-in zoom-in duration-200">
             <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-emerald-600" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Lesson Booked!</h3>
-            <p className="text-gray-600 mb-6">
-              Your lesson with {teacher.name} has been confirmed.
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('teacherDetail.lessonBooked')}</h3>
+            <p className="text-gray-600 mb-4">
+              {t('teacherDetail.lessonBookedMsg', { name: teacher.name })}
             </p>
-            <div className="text-sm text-gray-500">Redirecting to your courses...</div>
+            {teacher.whatsapp && (
+              <a
+                href={`https://wa.me/${teacher.whatsapp}?text=${encodeURIComponent(
+                  `Hi ${teacher.name}! 🎉 A student just booked a lesson with you.\nTime: ${formatToLocalDate(selectedSlot!)} ${formatToLocalTime(selectedSlot!)}\nPlease check your TutorAI dashboard to confirm.`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-colors mb-4"
+              >
+                <MessageCircle className="w-4 h-4" />
+                {t('teacherDetail.notifyWhatsApp')}
+              </a>
+            )}
+            <div className="text-sm text-gray-400">{t('teacherDetail.redirecting')}</div>
           </div>
         </div>
       )}

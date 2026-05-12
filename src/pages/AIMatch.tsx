@@ -1,38 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Search, CheckCircle2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import TeacherCard from '../components/TeacherCard';
-import teachersData from '../data/teachers.json';
-import { Teacher } from '../types';
+import { useTeachersStore } from '../store/useTeachersStore';
+import { TeacherListing } from '../types';
 
 const CHIPS = ['IELTS Speaking', 'Job Interview', 'Business English', 'Kids Beginner'];
 
 export default function AIMatch() {
+  const { t } = useTranslation();
+  const allTeachers = useTeachersStore((s) => s.teachers);
+  const approved = allTeachers.filter((t) => t.status === 'approved');
   const [query, setQuery] = useState('');
   const [isMatching, setIsMatching] = useState(false);
   const [matchStatus, setMatchStatus] = useState('');
-  const [results, setResults] = useState<Teacher[] | null>(null);
+  const [results, setResults] = useState<TeacherListing[] | null>(null);
 
   const handleMatch = () => {
     if (!query.trim()) return;
-    
+
     setIsMatching(true);
     setResults(null);
-    setMatchStatus('Analyzing goals...');
+    setMatchStatus(t('aiMatch.analyzing'));
 
-    // Simulate AI matching process
     setTimeout(() => {
-      setMatchStatus('Filtering 50+ tutors...');
+      setMatchStatus(t('aiMatch.filtering'));
     }, 1000);
 
     setTimeout(() => {
-      setMatchStatus('Found the best match!');
+      setMatchStatus(t('aiMatch.foundBest'));
     }, 2000);
 
     setTimeout(() => {
       setIsMatching(false);
-      // Mock result: return top 2 teachers
-      setResults((teachersData as Teacher[]).slice(0, 2));
+      setResults(approved.slice(0, 2));
     }, 3000);
   };
 
@@ -44,23 +46,22 @@ export default function AIMatch() {
             <Sparkles className="w-8 h-8 text-blue-600" />
           </div>
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
-            AI Smart Match
+            {t('aiMatch.title')}
           </h1>
           <p className="text-lg text-gray-600">
-            Tell us what you want to learn, and our AI will find the perfect tutor for you in seconds.
+            {t('aiMatch.subtitle')}
           </p>
         </div>
 
-        {/* Input Phase */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8">
           <textarea
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="E.g., I need to practice for my IELTS speaking test next month..."
+            placeholder={t('aiMatch.placeholder')}
             className="w-full h-32 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 placeholder-gray-400 mb-4"
             disabled={isMatching}
           />
-          
+
           <div className="flex flex-wrap gap-2 mb-6">
             {CHIPS.map((chip) => (
               <button
@@ -84,11 +85,10 @@ export default function AIMatch() {
             ) : (
               <Search className="w-5 h-5" />
             )}
-            {isMatching ? 'Matching...' : 'Find My Tutor'}
+            {isMatching ? t('aiMatch.matching') : t('aiMatch.findMyTutor')}
           </button>
         </div>
 
-        {/* Animation Phase */}
         <AnimatePresence mode="wait">
           {isMatching && (
             <motion.div
@@ -110,7 +110,6 @@ export default function AIMatch() {
           )}
         </AnimatePresence>
 
-        {/* Results Phase */}
         <AnimatePresence>
           {results && !isMatching && (
             <motion.div
@@ -121,9 +120,9 @@ export default function AIMatch() {
             >
               <div className="flex items-center justify-center gap-2 text-emerald-600 font-semibold mb-8">
                 <CheckCircle2 className="w-6 h-6" />
-                <span>We found 2 perfect matches for you!</span>
+                <span>{t('aiMatch.foundMatches')}</span>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {results.map((teacher, index) => (
                   <motion.div
@@ -133,7 +132,6 @@ export default function AIMatch() {
                     transition={{ delay: index * 0.2 }}
                     className="relative"
                   >
-                    {/* Match Badge */}
                     <div className="absolute -top-3 -right-3 z-10 bg-gradient-to-r from-violet-600 to-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border-2 border-white">
                       {98 - index * 3}% Match
                     </div>
