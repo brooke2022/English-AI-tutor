@@ -3,11 +3,13 @@ import { persist } from 'zustand/middleware';
 import { TeacherListing } from '../types';
 import seedData from '../data/teachers.json';
 
-const SEED_TEACHERS: TeacherListing[] = (seedData as Omit<TeacherListing, 'status' | 'submittedAt'>[]).map((t) => ({
+const SEED_TEACHERS: TeacherListing[] = (seedData as Omit<TeacherListing, 'status' | 'submittedAt'>[]).map((t, i) => ({
   ...t,
   status: 'approved' as const,
   submittedAt: '2026-01-01T00:00:00Z',
   approvedAt: '2026-01-01T00:00:00Z',
+  // 将第一位种子教师绑定到测试账号 teacher@test.com
+  ...(i === 0 ? { userId: 'user-teacher-1' } : {}),
 }));
 
 interface TeachersState {
@@ -56,6 +58,15 @@ export const useTeachersStore = create<TeachersState>()(
 
       getPending: () => get().teachers.filter((t) => t.status === 'pending'),
     }),
-    { name: 'ai-tutor-teachers' }
+    {
+      name: 'ai-tutor-teachers',
+      version: 2,
+      migrate: (_persistedState: unknown, version: number) => {
+        if (version < 2) {
+          return { teachers: SEED_TEACHERS };
+        }
+        return _persistedState as TeachersState;
+      },
+    }
   )
 );

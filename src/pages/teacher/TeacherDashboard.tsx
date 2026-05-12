@@ -1,29 +1,29 @@
 import { Link } from 'react-router-dom';
-import { Calendar, Users, Star, DollarSign, Video, ChevronRight, Clock, CheckCircle2, XCircle, AlertTriangle, Info } from 'lucide-react';
+import { Calendar, Users, Star, DollarSign, Video, ChevronRight, Clock, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTeachersStore } from '../../store/useTeachersStore';
-
-const MOCK_PENDING = [
-  { id: 'b1', studentName: 'Alex Chen', type: 'Trial Lesson', time: '2026-05-13T09:00:00Z' },
-  { id: 'b2', studentName: 'Yuki Tanaka', type: 'Regular Lesson', time: '2026-05-14T11:00:00Z' },
-];
-
-const MOCK_TODAY = [
-  { id: 't1', studentName: 'Sarah Kim', type: 'Trial Lesson', time: '2026-05-11T10:00:00Z', status: 'upcoming' as const },
-  { id: 't2', studentName: 'Marco Rossi', type: 'IELTS Prep', time: '2026-05-11T14:00:00Z', status: 'upcoming' as const },
-];
-
-function formatTime(utc: string) {
-  return new Date(utc).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
+import { useStore } from '../../store/useStore';
+import { formatToLocalTime } from '../../utils/time';
 
 export default function TeacherDashboard() {
   const { user } = useAuthStore();
   const { t } = useTranslation();
+  const { bookedLessons } = useStore();
 
   const teacherListing = useTeachersStore((s) => user ? s.getTeacherByUserId(user.id) : undefined);
   const profileStatus = teacherListing?.status;
+
+  const myBookings = teacherListing
+    ? bookedLessons.filter((l) => l.tutorId === teacherListing.id)
+    : [];
+
+  const pendingBookings = myBookings.filter((l) => l.status === 'pending');
+  const todayBookings = myBookings.filter((l) => {
+    const today = new Date().toDateString();
+    return (l.status === 'confirmed' || l.status === 'upcoming')
+      && new Date(l.time).toDateString() === today;
+  });
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('common.goodMorning') : hour < 17 ? t('common.goodAfternoon') : t('common.goodEvening');
@@ -68,10 +68,10 @@ export default function TeacherDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {[
-            { label: t('teacher.dashboard.upcoming'), value: '2', icon: <Calendar className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-50' },
-            { label: t('teacher.dashboard.totalStudents'), value: '24', icon: <Users className="w-5 h-5 text-emerald-600" />, bg: 'bg-emerald-50' },
-            { label: t('teacher.dashboard.avgRating'), value: '4.9 ★', icon: <Star className="w-5 h-5 text-amber-500" />, bg: 'bg-amber-50' },
-            { label: t('teacher.dashboard.monthlyEarnings'), value: '$320', icon: <DollarSign className="w-5 h-5 text-violet-600" />, bg: 'bg-violet-50' },
+            { label: t('teacher.dashboard.upcoming'), value: String(myBookings.filter(l => l.status === 'confirmed' || l.status === 'upcoming').length), icon: <Calendar className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-50' },
+            { label: t('teacher.dashboard.totalStudents'), value: String(new Set(myBookings.map(l => l.studentId)).size), icon: <Users className="w-5 h-5 text-emerald-600" />, bg: 'bg-emerald-50' },
+            { label: t('teacher.dashboard.avgRating'), value: teacherListing ? `${teacherListing.rating} ★` : '—', icon: <Star className="w-5 h-5 text-amber-500" />, bg: 'bg-amber-50' },
+            { label: t('teacher.dashboard.monthlyEarnings'), value: teacherListing ? `$${teacherListing.price * myBookings.filter(l => l.status === 'completed').length}` : '$0', icon: <DollarSign className="w-5 h-5 text-violet-600" />, bg: 'bg-violet-50' },
           ].map(({ label, value, icon, bg }) => (
             <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
               <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-4`}>{icon}</div>
@@ -90,13 +90,13 @@ export default function TeacherDashboard() {
                 <Link to="/teacher/bookings" className="text-sm text-blue-600 hover:text-blue-700 font-medium">{t('teacher.dashboard.viewAll')}</Link>
               </div>
 
-              {MOCK_PENDING.length === 0 ? (
+              {pendingBookings.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
                   <p className="text-gray-500 text-sm">{t('teacher.dashboard.noPending')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {MOCK_PENDING.map((b) => (
+                  {pendingBookings.map((b) => (
                     <div key={b.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-violet-500 rounded-xl flex items-center justify-center">
@@ -104,17 +104,15 @@ export default function TeacherDashboard() {
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900 text-sm">{b.studentName}</p>
-                          <p className="text-xs text-gray-500">{b.type} · {formatTime(b.time)}</p>
+                          <p className="text-xs text-gray-500">{b.type} · {formatToLocalTime(b.time)}</p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button className="flex items-center gap-1 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl transition-colors">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> {t('teacher.dashboard.accept')}
-                        </button>
-                        <button className="flex items-center gap-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-xl transition-colors">
-                          <XCircle className="w-3.5 h-3.5" /> {t('teacher.dashboard.decline')}
-                        </button>
-                      </div>
+                      <Link
+                        to="/teacher/bookings"
+                        className="flex items-center gap-1 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold rounded-xl transition-colors"
+                      >
+                        {t('teacher.bookings.tabPending')} →
+                      </Link>
                     </div>
                   ))}
                 </div>
@@ -124,27 +122,38 @@ export default function TeacherDashboard() {
             {/* Today's Schedule */}
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-4">{t('teacher.dashboard.todaySchedule')}</h2>
-              {MOCK_TODAY.length === 0 ? (
+              {todayBookings.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
                   <p className="text-gray-500 text-sm">{t('teacher.dashboard.noLessons')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {MOCK_TODAY.map((lesson) => (
+                  {todayBookings.map((lesson) => (
                     <div key={lesson.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="flex flex-col items-center justify-center w-14 h-14 bg-blue-50 rounded-xl border border-blue-100 shrink-0">
                           <Clock className="w-4 h-4 text-blue-500 mb-0.5" />
-                          <span className="text-xs font-bold text-blue-700">{formatTime(lesson.time)}</span>
+                          <span className="text-xs font-bold text-blue-700">{formatToLocalTime(lesson.time)}</span>
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900 text-sm">{lesson.studentName}</p>
                           <p className="text-xs text-gray-500">{lesson.type}</p>
                         </div>
                       </div>
-                      <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
-                        <Video className="w-4 h-4" /> {t('teacher.dashboard.join')}
-                      </button>
+                      {lesson.meetingUrl ? (
+                        <a
+                          href={lesson.meetingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
+                        >
+                          <Video className="w-4 h-4" /> {t('teacher.dashboard.join')}
+                        </a>
+                      ) : (
+                        <span className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-400 text-sm font-medium rounded-xl">
+                          <Video className="w-4 h-4" /> {t('teacher.dashboard.join')}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -50,8 +50,9 @@
     "bookLesson": "预约课程",
     "timesShownIn": "时间已转换为您的本地时区：",
     "bookFor": "预约 ${{price}}",
-    "lessonBooked": "预约成功！",
+    "lessonBooked": "请求已发送！",
     "lessonBookedMsg": "您与 {{name}} 的课程已确认。",
+    "lessonPendingMsg": "您的预约请求已发送给 {{name}}，确认后将通知您。",
     "redirecting": "正在跳转到我的课程...",
     "notifyWhatsApp": "通过 WhatsApp 通知外教"
   },
@@ -68,12 +69,28 @@
   },
   "myCourses": {
     "title": "我的课程",
-    "upcoming": "{{n}} 个待上课",
+    "upcoming": "{{n}} 个进行中",
     "noLessons": "暂无待上课程",
     "noLessonsDesc": "准备好开始您的英语之旅了吗？找到完美的外教，或让 AI 为您匹配最适合的老师。",
     "browseTutors": "浏览外教",
     "tryAIMatch": "试试 AI 匹配",
-    "joinLesson": "进入课堂"
+    "joinLesson": "进入课堂",
+    "enterClassroom": "进入教室",
+    "classroomLink": "课堂链接",
+    "copyLink": "复制链接",
+    "copied": "已复制！",
+    "openLink": "打开",
+    "pendingApproval": "待老师确认",
+    "awaitingConfirmation": "等待老师确认中",
+    "rejectedReason": "原因",
+    "status": {
+      "pending": "待确认",
+      "confirmed": "已确认",
+      "upcoming": "待上课",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "rejected": "已拒绝"
+    }
   },
   "auth": {
     "login": {
@@ -264,11 +281,22 @@
     "bookings": {
       "title": "预约管理",
       "upcomingCount": "{{n}} 个待上课",
+      "pendingCount": "{{n}} 个待确认",
+      "tabPending": "待确认",
+      "tabConfirmed": "已确认",
       "tabUpcoming": "待上课",
       "tabCompleted": "已完成",
       "tabCancelled": "已取消",
       "noBookings": "暂无{{status}}预约。",
-      "join": "进入课堂",
+      "join": "进入教室",
+      "accept": "接受",
+      "decline": "拒绝",
+      "meetingUrlLabel": "请填写腾讯会议链接（确认前必填）",
+      "meetingUrlPlaceholder": "https://meeting.tencent.com/...",
+      "meetingUrlRequired": "请在确认前输入会议链接。",
+      "rejectReasonLabel": "请选择拒绝原因：",
+      "confirmAccept": "确认并发送链接",
+      "confirmDecline": "拒绝课程",
       "cancelConfirm": "确认取消与 {{name}} 的课程？",
       "yesCancel": "确认取消",
       "keepIt": "保留"

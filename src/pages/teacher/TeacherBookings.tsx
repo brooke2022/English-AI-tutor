@@ -1,66 +1,86 @@
 import { useState } from 'react';
-import { Video, Clock, GraduationCap, XCircle, AlertCircle } from 'lucide-react';
+import { Video, Clock, GraduationCap, XCircle, AlertCircle, CheckCircle2, Link as LinkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useStore } from '../../store/useStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useTeachersStore } from '../../store/useTeachersStore';
+import { formatToLocalDate, formatToLocalTime } from '../../utils/time';
+import { BookedLesson } from '../../types';
 
-type Status = 'upcoming' | 'completed' | 'cancelled';
+type TabStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
-interface Booking {
-  id: string;
-  studentName: string;
-  type: string;
-  time: string;
-  status: Status;
-}
-
-const MOCK_BOOKINGS: Booking[] = [
-  { id: 'b1', studentName: 'Alex Chen', type: 'Trial Lesson', time: '2026-05-13T09:00:00Z', status: 'upcoming' },
-  { id: 'b2', studentName: 'Yuki Tanaka', type: 'Regular Lesson', time: '2026-05-14T11:00:00Z', status: 'upcoming' },
-  { id: 'b3', studentName: 'Sarah Kim', type: 'IELTS Prep', time: '2026-05-11T10:00:00Z', status: 'upcoming' },
-  { id: 'b4', studentName: 'Marco Rossi', type: 'Business English', time: '2026-04-30T14:00:00Z', status: 'completed' },
-  { id: 'b5', studentName: 'Liu Wei', type: 'Trial Lesson', time: '2026-04-28T08:00:00Z', status: 'completed' },
-  { id: 'b6', studentName: 'Elena Petrova', type: 'Pronunciation', time: '2026-04-25T15:00:00Z', status: 'cancelled' },
+const REJECTION_REASONS = [
+  { value: 'schedule_conflict', en: 'Schedule conflict (临时有事)' },
+  { value: 'student_mismatch', en: 'Student mismatch (学生不匹配)' },
+  { value: 'other', en: 'Other (其他)' },
 ];
 
-function formatDateTime(utc: string) {
-  const d = new Date(utc);
-  return {
-    date: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-    time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-  };
-}
-
-const STATUS_STYLES: Record<Status, string> = {
-  upcoming: 'bg-blue-50 text-blue-700',
+const STATUS_STYLES: Record<string, string> = {
+  pending: 'bg-amber-50 text-amber-700',
+  confirmed: 'bg-blue-50 text-blue-700',
   completed: 'bg-emerald-50 text-emerald-700',
   cancelled: 'bg-gray-100 text-gray-500',
 };
 
 export default function TeacherBookings() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<Status>('upcoming');
-  const [cancelingId, setCancelingId] = useState<string | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
+  const { user } = useAuthStore();
+  const { bookedLessons, updateLesson } = useStore();
+  const { getTeacherByUserId, updateTeacher, teachers } = useTeachersStore();
 
-  const filtered = bookings.filter((b) => b.status === activeTab);
+  const teacherListing = user ? getTeacherByUserId(user.id) : undefined;
+  const myBookings = teacherListing
+    ? bookedLessons.filter((l) => l.tutorId === teacherListing.id)
+    : [];
 
-  const handleCancel = (id: string) => {
-    setBookings((prev) => prev.map((b) => b.id === id ? { ...b, status: 'cancelled' } : b));
-    setCancelingId(null);
-  };
+  const [activeTab, setActiveTab] = useState<TabStatus>('pending');
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [meetingUrl, setMeetingUrl] = useState('');
+  const [meetingUrlError, setMeetingUrlError] = useState(false);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState(REJECTION_REASONS[0].value);
 
-  const TABS: { label: string; value: Status }[] = [
-    { label: t('teacher.bookings.tabUpcoming'), value: 'upcoming' },
+  const filtered = myBookings.filter((b) => b.status === activeTab);
+
+  const TABS: { label: string; value: TabStatus }[] = [
+    { label: t('teacher.bookings.tabPending'), value: 'pending' },
+    { label: t('teacher.bookings.tabConfirmed'), value: 'confirmed' },
     { label: t('teacher.bookings.tabCompleted'), value: 'completed' },
     { label: t('teacher.bookings.tabCancelled'), value: 'cancelled' },
   ];
+
+  const handleAccept = (lesson: BookedLesson) => {
+    if (!meetingUrl.trim()) {
+      setMeetingUrlError(true);
+      return;
+    }
+    updateLesson(lesson.id, { status: 'confirmed', meetingUrl: meetingUrl.trim() });
+    setAcceptingId(null);
+    setMeetingUrl('');
+    setMeetingUrlError(false);
+  };
+
+  const handleReject = (lesson: BookedLesson) => {
+    updateLesson(lesson.id, { status: 'cancelled', rejectionReason: rejectReason });
+    if (teacherListing) {
+      const currentTeacher = teachers.find((t) => t.id === teacherListing.id);
+      if (currentTeacher) {
+        updateTeacher(teacherListing.id, {
+          availableSlots: [...currentTeacher.availableSlots, lesson.time],
+        });
+      }
+    }
+    setRejectingId(null);
+    setRejectReason(REJECTION_REASONS[0].value);
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">{t('teacher.bookings.title')}</h1>
-          <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-            {t('teacher.bookings.upcomingCount', { n: bookings.filter((b) => b.status === 'upcoming').length })}
+          <span className="bg-amber-100 text-amber-800 text-sm font-medium px-3 py-1 rounded-full">
+            {t('teacher.bookings.pendingCount', { n: myBookings.filter((b) => b.status === 'pending').length })}
           </span>
         </div>
 
@@ -86,64 +106,140 @@ export default function TeacherBookings() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filtered.map((booking) => {
-              const { date, time } = formatDateTime(booking.time);
-              return (
-                <div key={booking.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-violet-500 rounded-xl flex items-center justify-center shrink-0">
-                        <span className="text-white font-bold">{booking.studentName[0]}</span>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-gray-900">{booking.studentName}</h3>
-                          <span className={`px-2 py-0.5 text-xs font-semibold rounded-md ${STATUS_STYLES[booking.status]}`}>
-                            {booking.type}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" /> {date} · {time}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <GraduationCap className="w-3.5 h-3.5" /> {booking.status}
-                          </span>
-                        </div>
-                      </div>
+            {filtered.map((booking) => (
+              <div key={booking.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-violet-500 rounded-xl flex items-center justify-center shrink-0">
+                      <span className="text-white font-bold">{booking.studentName[0]}</span>
                     </div>
-
-                    {booking.status === 'upcoming' && (
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
-                          <Video className="w-4 h-4" /> {t('teacher.bookings.join')}
-                        </button>
-                        <button
-                          onClick={() => setCancelingId(booking.id)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                          title="Cancel lesson"
-                        >
-                          <XCircle className="w-5 h-5" />
-                        </button>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-gray-900">{booking.studentName}</h3>
+                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-md ${STATUS_STYLES[booking.status] ?? 'bg-gray-100 text-gray-500'}`}>
+                          {booking.type}
+                        </span>
                       </div>
-                    )}
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          {formatToLocalDate(booking.time)} · {formatToLocalTime(booking.time)}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <GraduationCap className="w-3.5 h-3.5" /> {booking.status}
+                        </span>
+                      </div>
+                      {booking.meetingUrl && (
+                        <a
+                          href={booking.meetingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                        >
+                          <LinkIcon className="w-3 h-3" /> {booking.meetingUrl}
+                        </a>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Cancel confirmation */}
-                  {cancelingId === booking.id && (
-                    <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100 flex items-start gap-3">
+                  {booking.status === 'pending' && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => { setAcceptingId(booking.id); setRejectingId(null); }}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-colors"
+                      >
+                        <CheckCircle2 className="w-4 h-4" /> {t('teacher.bookings.accept')}
+                      </button>
+                      <button
+                        onClick={() => { setRejectingId(booking.id); setAcceptingId(null); }}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                        title="Decline"
+                      >
+                        <XCircle className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {booking.status === 'confirmed' && (
+                    <a
+                      href={booking.meetingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shrink-0"
+                    >
+                      <Video className="w-4 h-4" /> {t('teacher.bookings.join')}
+                    </a>
+                  )}
+                </div>
+
+                {/* Accept panel: meeting URL input */}
+                {acceptingId === booking.id && (
+                  <div className="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                    <p className="text-sm font-medium text-emerald-800 mb-3">
+                      {t('teacher.bookings.meetingUrlLabel')}
+                    </p>
+                    <input
+                      type="url"
+                      value={meetingUrl}
+                      onChange={(e) => { setMeetingUrl(e.target.value); setMeetingUrlError(false); }}
+                      placeholder={t('teacher.bookings.meetingUrlPlaceholder')}
+                      className={`w-full px-4 py-2.5 rounded-xl border text-sm mb-1 outline-none focus:ring-2 focus:ring-emerald-400 ${
+                        meetingUrlError ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'
+                      }`}
+                    />
+                    {meetingUrlError && (
+                      <p className="text-xs text-red-600 mb-3">{t('teacher.bookings.meetingUrlRequired')}</p>
+                    )}
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => handleAccept(booking)}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-colors"
+                      >
+                        {t('teacher.bookings.confirmAccept')}
+                      </button>
+                      <button
+                        onClick={() => { setAcceptingId(null); setMeetingUrl(''); setMeetingUrlError(false); }}
+                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        {t('teacher.bookings.keepIt')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reject panel: reason selector */}
+                {rejectingId === booking.id && (
+                  <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100">
+                    <div className="flex items-start gap-3">
                       <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-sm text-red-700 font-medium mb-3">{t('teacher.bookings.cancelConfirm', { name: booking.studentName })}</p>
+                        <p className="text-sm text-red-700 font-medium mb-3">
+                          {t('teacher.bookings.rejectReasonLabel')}
+                        </p>
+                        <div className="space-y-2 mb-4">
+                          {REJECTION_REASONS.map((r) => (
+                            <label key={r.value} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`reject-${booking.id}`}
+                                value={r.value}
+                                checked={rejectReason === r.value}
+                                onChange={() => setRejectReason(r.value)}
+                                className="accent-red-600"
+                              />
+                              <span className="text-sm text-gray-700">{r.en}</span>
+                            </label>
+                          ))}
+                        </div>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleCancel(booking.id)}
+                            onClick={() => handleReject(booking)}
                             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors"
                           >
-                            {t('teacher.bookings.yesCancel')}
+                            {t('teacher.bookings.confirmDecline')}
                           </button>
                           <button
-                            onClick={() => setCancelingId(null)}
+                            onClick={() => setRejectingId(null)}
                             className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
                           >
                             {t('teacher.bookings.keepIt')}
@@ -151,10 +247,10 @@ export default function TeacherBookings() {
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

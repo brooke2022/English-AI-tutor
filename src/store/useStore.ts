@@ -7,6 +7,7 @@ interface AppState {
   userTimezone: string;
   addLesson: (lesson: BookedLesson) => void;
   removeLesson: (id: string) => void;
+  updateLesson: (id: string, updates: Partial<BookedLesson>) => void;
   setUserTimezone: (timezone: string) => void;
 }
 
@@ -22,6 +23,12 @@ export const useStore = create<AppState>()(
       removeLesson: (id) =>
         set((state) => ({
           bookedLessons: state.bookedLessons.filter((l) => l.id !== id),
+        })),
+      updateLesson: (id, updates) =>
+        set((state) => ({
+          bookedLessons: state.bookedLessons.map((l) =>
+            l.id === id ? { ...l, ...updates } : l
+          ),
         })),
       setUserTimezone: (timezone) => set({ userTimezone: timezone }),
     }),

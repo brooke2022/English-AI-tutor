@@ -31,9 +31,13 @@ export interface Teacher {
 export interface BookedLesson {
   id: string;
   tutorId: string;
+  studentId: string;
+  studentName: string;
   time: string;
   type: string;
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'upcoming' | 'completed' | 'cancelled' | 'rejected';
+  meetingUrl?: string;
+  rejectionReason?: string;
 }
 
 export interface User {

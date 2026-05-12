@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Star, Video, Clock, Globe, Calendar as CalendarIcon, CheckCircle2, GraduationCap, Award, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '../store/useStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { formatToLocalTime, formatToLocalDate, groupSlotsByDay, getUserTimezone } from '../utils/time';
 import { useTeachersStore } from '../store/useTeachersStore';
 
@@ -11,6 +12,8 @@ export default function TeacherDetail() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const addLesson = useStore((state) => state.addLesson);
+  const { user } = useAuthStore();
+  const updateTeacher = useTeachersStore((s) => s.updateTeacher);
 
   const teacher = useTeachersStore((s) => s.teachers.find((t) => t.id === id && t.status === 'approved'));
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -34,9 +37,15 @@ export default function TeacherDetail() {
       addLesson({
         id: `lesson-${Date.now()}`,
         tutorId: teacher.id,
+        studentId: user?.id ?? 'guest',
+        studentName: user?.name ?? 'Student',
         time: selectedSlot,
         type: 'Trial Lesson',
-        status: 'upcoming'
+        status: 'pending',
+      });
+
+      updateTeacher(teacher.id, {
+        availableSlots: teacher.availableSlots.filter((s) => s !== selectedSlot),
       });
 
       setIsBooking(false);
@@ -232,7 +241,7 @@ export default function TeacherDetail() {
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('teacherDetail.lessonBooked')}</h3>
             <p className="text-gray-600 mb-4">
-              {t('teacherDetail.lessonBookedMsg', { name: teacher.name })}
+              {t('teacherDetail.lessonPendingMsg', { name: teacher.name })}
             </p>
             {teacher.whatsapp && (
               <a

@@ -1,25 +1,29 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Star, Sparkles, BookOpen, ChevronRight, User } from 'lucide-react';
+import { Calendar, Clock, Star, Sparkles, BookOpen, ChevronRight, User, Video, ExternalLink, X, Copy, CheckCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useStore } from '../../store/useStore';
 import { formatToLocalDate, formatToLocalTime } from '../../utils/time';
-import teachersData from '../../data/teachers.json';
-import { Teacher } from '../../types';
+import { useTeachersStore } from '../../store/useTeachersStore';
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const { bookedLessons } = useStore();
   const { t } = useTranslation();
-  const teachers = teachersData as Teacher[];
+  const teachers = useTeachersStore((s) => s.teachers);
+  const [modalLessonId, setModalLessonId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const modalLesson = bookedLessons.find((l) => l.id === modalLessonId);
 
   const getTeacher = (tutorId: string) => teachers.find((t) => t.id === tutorId);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('common.goodMorning') : hour < 17 ? t('common.goodAfternoon') : t('common.goodEvening');
 
-  const upcomingLessons = bookedLessons.filter((l) => l.status === 'upcoming');
-  const recentLessons = upcomingLessons.slice(0, 3);
+  const activeLessons = bookedLessons.filter((l) => l.status === 'pending' || l.status === 'confirmed' || l.status === 'upcoming');
+  const recentLessons = activeLessons.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-10 px-4 sm:px-6 lg:px-8">
@@ -39,7 +43,7 @@ export default function StudentDashboard() {
               </div>
               <span className="text-sm font-medium text-gray-500">{t('student.dashboard.upcomingLessons')}</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900">{upcomingLessons.length}</div>
+            <div className="text-3xl font-bold text-gray-900">{activeLessons.length}</div>
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -103,15 +107,36 @@ export default function StudentDashboard() {
                           referrerPolicy="no-referrer"
                         />
                         <div>
-                          <p className="font-semibold text-gray-900">{teacher.name}</p>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="font-semibold text-gray-900">{teacher.name}</p>
+                            {lesson.status === 'pending' && (
+                              <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded">
+                                {t('myCourses.status.pending', { defaultValue: 'Pending' })}
+                              </span>
+                            )}
+                            {lesson.status === 'confirmed' && (
+                              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded">
+                                {t('myCourses.status.confirmed', { defaultValue: 'Confirmed' })}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-500">
                             {formatToLocalDate(lesson.time)} · {formatToLocalTime(lesson.time)}
                           </p>
+                          {lesson.status === 'pending' && (
+                            <p className="text-xs text-amber-600 mt-0.5">{t('myCourses.pendingApproval')}</p>
+                          )}
                         </div>
                       </div>
-                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
-                        {t('student.dashboard.join')}
-                      </button>
+                      {lesson.status === 'confirmed' && lesson.meetingUrl && (
+                        <button
+                          onClick={() => { setModalLessonId(lesson.id); setCopied(false); }}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors flex items-center gap-1.5 shrink-0"
+                        >
+                          <Video className="w-4 h-4" />
+                          {t('myCourses.enterClassroom')}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -147,6 +172,56 @@ export default function StudentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Meeting link modal */}
+      {modalLessonId && modalLesson && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
+          onClick={() => setModalLessonId(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-8 shadow-2xl max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-900">{t('myCourses.classroomLink')}</h3>
+              <button
+                onClick={() => setModalLessonId(null)}
+                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-500 mb-1">
+              {formatToLocalDate(modalLesson.time)} {formatToLocalTime(modalLesson.time)}
+            </p>
+
+            <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 break-all text-sm text-blue-700 font-mono">
+              {modalLesson.meetingUrl}
+            </div>
+
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => { navigator.clipboard.writeText(modalLesson.meetingUrl!); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-xl transition-colors"
+              >
+                {copied ? <CheckCheck className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                {copied ? t('myCourses.copied') : t('myCourses.copyLink')}
+              </button>
+              <a
+                href={modalLesson.meetingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                {t('myCourses.openLink')}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

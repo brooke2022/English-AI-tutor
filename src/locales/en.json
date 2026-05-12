@@ -50,8 +50,9 @@
     "bookLesson": "Book a Lesson",
     "timesShownIn": "Times shown in your local timezone:",
     "bookFor": "Book for ${{price}}",
-    "lessonBooked": "Lesson Booked!",
+    "lessonBooked": "Request Sent!",
     "lessonBookedMsg": "Your lesson with {{name}} has been confirmed.",
+    "lessonPendingMsg": "Your booking request has been sent to {{name}}. You'll be notified once confirmed.",
     "redirecting": "Redirecting to your courses...",
     "notifyWhatsApp": "Notify teacher via WhatsApp"
   },
@@ -68,12 +69,28 @@
   },
   "myCourses": {
     "title": "My Courses",
-    "upcoming": "{{n}} Upcoming",
+    "upcoming": "{{n}} Active",
     "noLessons": "No upcoming lessons yet",
     "noLessonsDesc": "Ready to start your English journey? Find the perfect tutor or let our AI match you with the best fit.",
     "browseTutors": "Browse Tutors",
     "tryAIMatch": "Try AI Match",
-    "joinLesson": "Join Lesson"
+    "joinLesson": "Join Lesson",
+    "enterClassroom": "Enter Classroom",
+    "classroomLink": "Classroom Link",
+    "copyLink": "Copy Link",
+    "copied": "Copied!",
+    "openLink": "Open",
+    "pendingApproval": "Pending Approval",
+    "awaitingConfirmation": "Awaiting teacher confirmation",
+    "rejectedReason": "Reason",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "upcoming": "Upcoming",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "rejected": "Declined"
+    }
   },
   "auth": {
     "login": {
@@ -264,11 +281,22 @@
     "bookings": {
       "title": "Bookings",
       "upcomingCount": "{{n}} upcoming",
+      "pendingCount": "{{n}} pending",
+      "tabPending": "Pending",
+      "tabConfirmed": "Confirmed",
       "tabUpcoming": "Upcoming",
       "tabCompleted": "Completed",
       "tabCancelled": "Cancelled",
       "noBookings": "No {{status}} bookings.",
-      "join": "Join",
+      "join": "Enter Classroom",
+      "accept": "Accept",
+      "decline": "Decline",
+      "meetingUrlLabel": "Paste the Tencent Meeting link (required to confirm)",
+      "meetingUrlPlaceholder": "https://meeting.tencent.com/...",
+      "meetingUrlRequired": "Please enter a meeting URL before confirming.",
+      "rejectReasonLabel": "Please select a reason for declining:",
+      "confirmAccept": "Confirm & Share Link",
+      "confirmDecline": "Decline Lesson",
       "cancelConfirm": "Cancel this lesson with {{name}}?",
       "yesCancel": "Yes, cancel",
       "keepIt": "Keep it"
