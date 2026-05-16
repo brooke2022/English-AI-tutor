@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(pg_isready -h localhost -p 5432)",
+      "Bash(brew services *)",
+      "Bash(brew --version)",
+      "Bash(brew install *)",
+      "Bash(wait bmc92t7bo *)",
+      "Bash(/usr/local/opt/postgresql@16/bin/pg_isready -h localhost -p 5432)",
+      "Bash(export PATH=\"/usr/local/opt/postgresql@16/bin:$PATH\")",
+      "Bash(psql -d postgres -c \"CREATE USER tutor WITH PASSWORD 'tutorpass' CREATEDB;\")",
+      "Bash(psql -d postgres -c \"CREATE DATABASE tutor_dev OWNER tutor;\")",
+      "Bash(psql -d postgres -c \"\\\\du tutor\")",
+      "Bash(psql -d postgres -c \"\\\\l tutor_dev\")",
+      "Bash(PGPASSWORD=tutorpass /usr/local/opt/postgresql@16/bin/psql -U tutor -h localhost -d tutor_dev -c \"SELECT version\\(\\);\")",
+      "Bash(npx prisma *)",
+      "Bash(curl -s -o /dev/null -w \"Health: HTTP %{http_code}\\\\n\" http://localhost:4000/api/v1/health)",
+      "Bash(curl -s -X POST http://localhost:4000/api/v1/auth/register -H \"Content-Type: application/json\" -d '{\"email\":\"smoke@test.com\",\"password\":\"password123\",\"name\":\"Smoke Test\",\"role\":\"STUDENT\"}' -w \"\\\\nRegister: HTTP %{http_code}\\\\n\")"
+    ]
+  }
+}

@@ -2,29 +2,27 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, ChevronRight, GraduationCap, Video, ExternalLink, X, Copy, CheckCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useStore } from '../store/useStore';
 import { formatToLocalDate, formatToLocalTime } from '../utils/time';
-import { useTeachersStore } from '../store/useTeachersStore';
+import { useBookings, BookingDto } from '../hooks/useBookings';
 
 const STATUS_BADGE: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-700',
-  confirmed: 'bg-blue-100 text-blue-700',
-  upcoming: 'bg-blue-100 text-blue-700',
-  completed: 'bg-emerald-100 text-emerald-700',
-  cancelled: 'bg-gray-100 text-gray-500',
-  rejected: 'bg-red-100 text-red-600',
+  PENDING: 'bg-amber-100 text-amber-700',
+  CONFIRMED: 'bg-blue-100 text-blue-700',
+  COMPLETED: 'bg-emerald-100 text-emerald-700',
+  CANCELLED: 'bg-gray-100 text-gray-500',
 };
+
+function statusKey(s: BookingDto['status']) {
+  return s.toLowerCase() as 'pending' | 'confirmed' | 'completed' | 'cancelled';
+}
 
 export default function MyCourses() {
   const { t } = useTranslation();
-  const bookedLessons = useStore((state) => state.bookedLessons);
-  const teachers = useTeachersStore((s) => s.teachers);
+  const { data: bookings = [], isLoading } = useBookings();
   const [modalLessonId, setModalLessonId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const getTeacher = (tutorId: string) => teachers.find((t) => t.id === tutorId);
-  const modalLesson = bookedLessons.find((l) => l.id === modalLessonId);
-  const modalTeacher = modalLesson ? getTeacher(modalLesson.tutorId) : null;
+  const modalLesson = bookings.find((l) => l.id === modalLessonId);
 
   const handleCopy = (url: string) => {
     navigator.clipboard.writeText(url);
@@ -32,19 +30,25 @@ export default function MyCourses() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const activeCount = bookings.filter(
+    (l) => l.status === 'PENDING' || l.status === 'CONFIRMED',
+  ).length;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">{t('myCourses.title')}</h1>
-          {bookedLessons.length > 0 && (
+          {bookings.length > 0 && (
             <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-              {t('myCourses.upcoming', { n: bookedLessons.filter((l) => l.status === 'pending' || l.status === 'confirmed' || l.status === 'upcoming').length })}
+              {t('myCourses.upcoming', { n: activeCount })}
             </span>
           )}
         </div>
 
-        {bookedLessons.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-24 text-gray-500">Loading...</div>
+        ) : bookings.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
               <Calendar className="w-12 h-12 text-blue-500" />
@@ -72,9 +76,9 @@ export default function MyCourses() {
           </div>
         ) : (
           <div className="space-y-4">
-            {bookedLessons.map((lesson) => {
-              const teacher = getTeacher(lesson.tutorId);
-              if (!teacher) return null;
+            {bookings.map((lesson) => {
+              const teacherName = lesson.teacherProfile.user.name;
+              const sKey = statusKey(lesson.status);
 
               return (
                 <div
@@ -84,37 +88,37 @@ export default function MyCourses() {
                   <div className="flex items-center gap-5 flex-1 min-w-0">
                     <div className="flex flex-col items-center justify-center w-16 h-16 bg-blue-50 rounded-xl border border-blue-100 shrink-0">
                       <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
-                        {formatToLocalDate(lesson.time).split(',')[0]}
+                        {formatToLocalDate(lesson.slotTime).split(',')[0]}
                       </span>
                       <span className="text-lg font-extrabold text-blue-900">
-                        {formatToLocalDate(lesson.time).split(' ')[2]}
+                        {formatToLocalDate(lesson.slotTime).split(' ')[2]}
                       </span>
                     </div>
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-bold text-gray-900">{teacher.name}</h3>
+                        <h3 className="text-lg font-bold text-gray-900">{teacherName}</h3>
                         <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-md shrink-0">
                           {lesson.type}
                         </span>
-                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-md capitalize shrink-0 ${STATUS_BADGE[lesson.status] ?? 'bg-gray-100 text-gray-500'}`}>
-                          {t(`myCourses.status.${lesson.status}`, { defaultValue: lesson.status })}
+                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-md shrink-0 ${STATUS_BADGE[lesson.status] ?? 'bg-gray-100 text-gray-500'}`}>
+                          {t(`myCourses.status.${sKey}`, { defaultValue: sKey })}
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1.5">
                           <Clock className="w-4 h-4" />
-                          {formatToLocalTime(lesson.time)}
+                          {formatToLocalTime(lesson.slotTime)}
                         </span>
                         <span className="flex items-center gap-1.5">
                           <GraduationCap className="w-4 h-4" />
-                          {teacher.tags[0]}
+                          {lesson.teacherProfile.country}
                         </span>
                       </div>
-                      {lesson.status === 'pending' && (
+                      {lesson.status === 'PENDING' && (
                         <p className="mt-1 text-xs text-amber-600">{t('myCourses.awaitingConfirmation')}</p>
                       )}
-                      {lesson.status === 'cancelled' && lesson.rejectionReason && (
+                      {lesson.status === 'CANCELLED' && lesson.rejectionReason && (
                         <p className="mt-1 text-xs text-red-500">
                           {t('myCourses.rejectedReason')}: {lesson.rejectionReason.replace(/_/g, ' ')}
                         </p>
@@ -123,7 +127,7 @@ export default function MyCourses() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {lesson.status === 'confirmed' && lesson.meetingUrl && (
+                    {lesson.status === 'CONFIRMED' && lesson.meetingUrl && (
                       <button
                         onClick={() => { setModalLessonId(lesson.id); setCopied(false); }}
                         className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
@@ -144,7 +148,7 @@ export default function MyCourses() {
       </div>
 
       {/* Meeting link modal */}
-      {modalLessonId && modalLesson && modalTeacher && (
+      {modalLessonId && modalLesson && modalLesson.meetingUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
           onClick={() => setModalLessonId(null)}
@@ -163,7 +167,9 @@ export default function MyCourses() {
               </button>
             </div>
 
-            <p className="text-sm text-gray-500 mb-1">{modalTeacher.name} · {formatToLocalDate(modalLesson.time)} {formatToLocalTime(modalLesson.time)}</p>
+            <p className="text-sm text-gray-500 mb-1">
+              {modalLesson.teacherProfile.user.name} · {formatToLocalDate(modalLesson.slotTime)} {formatToLocalTime(modalLesson.slotTime)}
+            </p>
 
             <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 break-all text-sm text-blue-700 font-mono">
               {modalLesson.meetingUrl}

@@ -3,33 +3,43 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, ExternalLink, Upload, Video, X, Link as LinkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useTeachersStore } from '../../store/useTeachersStore';
+import { useTeacher } from '../../hooks/useTeachers';
+import { apiPatch } from '../../lib/api';
+import { uploadFile } from '../../hooks/useUpload';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const SPECIALTIES = ['IELTS', 'Business', 'Kids', 'Conversational', 'Beginners', 'Job Interview', 'Pronunciation', 'Advanced'];
 const COUNTRIES = ['Philippines', 'Nepal', 'India', 'South Africa', 'United Kingdom', 'United States', 'Canada', 'Australia', 'Other'];
 
 export default function TeacherProfile() {
-  const { user, updateProfile, isLoading } = useAuthStore();
+  const { user } = useAuthStore();
   const { t } = useTranslation();
-  const teacherListing = useTeachersStore((s) => user ? s.getTeacherByUserId(user.id) : undefined);
-  const updateTeacher = useTeachersStore((s) => s.updateTeacher);
+  const qc = useQueryClient();
+  const { data: teacher } = useTeacher(user?.id);
+
+  const updateProfileMut = useMutation({
+    mutationFn: (body: Record<string, unknown>) => apiPatch('/users/me', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['teacher', user?.id] });
+    },
+  });
 
   const [form, setForm] = useState({
     name: user?.name || '',
-    country: teacherListing?.country || 'Philippines',
-    timezone: teacherListing?.timezone || user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-    intro: teacherListing?.intro || 'Hi! I am a certified TEFL teacher with years of experience.',
-    tags: teacherListing?.tags || (['IELTS', 'Business'] as string[]),
-    price: String(teacherListing?.price ?? '12'),
-    trialPrice: String(teacherListing?.trialPrice ?? '2'),
-    yearsExp: String(teacherListing?.yearsExp ?? ''),
-    education: teacherListing?.education || '',
-    whatsapp: teacherListing?.whatsapp || '',
+    country: teacher?.country || 'Philippines',
+    timezone: user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    intro: teacher?.intro || 'Hi! I am a certified TEFL teacher with years of experience.',
+    tags: teacher?.tags || (['IELTS', 'Business'] as string[]),
+    price: String(teacher?.price ?? '12'),
+    trialPrice: String(teacher?.trialPrice ?? '2'),
+    yearsExp: String(teacher?.yearsExp ?? ''),
+    education: teacher?.education || '',
+    whatsapp: teacher?.whatsapp || '',
   });
   const [saved, setSaved] = useState(false);
+  const isLoading = updateProfileMut.isPending;
 
-  // Video state
-  const [videoUrl, setVideoUrl] = useState(teacherListing?.videoUrl || '');
+  const [videoUrl, setVideoUrl] = useState(teacher?.videoUrl || '');
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [videoMode, setVideoMode] = useState<'upload' | 'url'>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,11 +50,17 @@ export default function TeacherProfile() {
       tags: f.tags.includes(tag) ? f.tags.filter((t) => t !== tag) : [...f.tags, tag],
     }));
 
-  const handleVideoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const blobUrl = URL.createObjectURL(file);
-    setVideoUrl(blobUrl);
+    try {
+      const url = await uploadFile(file, 'VIDEO');
+      setVideoUrl(url);
+    } catch (err) {
+      console.error(err);
+      // Fallback to local preview if upload fails
+      setVideoUrl(URL.createObjectURL(file));
+    }
   };
 
   const handleVideoUrlSave = () => {
@@ -56,24 +72,25 @@ export default function TeacherProfile() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateProfile({ name: form.name, timezone: form.timezone });
-    if (teacherListing) {
-      updateTeacher(teacherListing.id, {
+    try {
+      await updateProfileMut.mutateAsync({
         name: form.name,
-        country: form.country,
         timezone: form.timezone,
+        country: form.country,
         intro: form.intro,
         tags: form.tags,
-        price: Number(form.price),
+        hourlyRate: Number(form.price),
         trialPrice: Number(form.trialPrice),
         yearsExp: form.yearsExp ? Number(form.yearsExp) : undefined,
         education: form.education || undefined,
         whatsapp: form.whatsapp || undefined,
-        videoUrl,
+        videoUrl: videoUrl || undefined,
       });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      console.error(err);
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
   };
 
   const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
@@ -84,7 +101,7 @@ export default function TeacherProfile() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">{t('teacher.profile.title')}</h1>
           <Link
-            to={teacherListing ? `/teachers/${teacherListing.id}` : '/teachers'}
+            to={user ? `/teachers/${user.id}` : '/teachers'}
             className="inline-flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:text-blue-700 bg-blue-50 px-3 py-2 rounded-xl"
           >
             <ExternalLink className="w-4 h-4" /> {t('teacher.profile.previewProfile')}

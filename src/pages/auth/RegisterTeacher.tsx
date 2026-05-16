@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { GraduationCap, Eye, EyeOff, ChevronLeft, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useTeachersStore } from '../../store/useTeachersStore';
 
 const SPECIALTIES = ['IELTS', 'Business', 'Kids', 'Conversational', 'Beginners', 'Job Interview', 'Pronunciation', 'Advanced'];
 const COUNTRIES = ['Philippines', 'Nepal', 'India', 'South Africa', 'United Kingdom', 'United States', 'Canada', 'Australia', 'Other'];
@@ -68,38 +67,8 @@ export default function RegisterTeacher() {
       },
       'teacher'
     );
-    const { isAuthenticated, user } = useAuthStore.getState();
-    if (isAuthenticated && user) {
-      const countryCode = form.country === 'Philippines' ? 'PH'
-        : form.country === 'Nepal' ? 'NP'
-        : form.country === 'India' ? 'IN'
-        : form.country === 'South Africa' ? 'ZA'
-        : form.country === 'United Kingdom' ? 'GB'
-        : form.country === 'United States' ? 'US'
-        : form.country === 'Canada' ? 'CA'
-        : form.country === 'Australia' ? 'AU'
-        : 'UN';
-      useTeachersStore.getState().addTeacher({
-        id: `tutor-${Date.now()}`,
-        userId: user.id,
-        name: form.name,
-        country: form.country,
-        countryCode,
-        avatar: `https://picsum.photos/seed/${form.name.toLowerCase().replace(' ', '')}/200/200`,
-        tags: form.tags,
-        price: Number(form.price),
-        trialPrice: Number(form.trialPrice),
-        rating: 0,
-        reviewCount: 0,
-        timezone: form.timezone,
-        intro: form.intro,
-        videoUrl: '',
-        availableSlots: [],
-        reviews: [],
-        whatsapp: form.whatsapp || undefined,
-        status: 'pending',
-        submittedAt: new Date().toISOString(),
-      });
+    const { isAuthenticated } = useAuthStore.getState();
+    if (isAuthenticated) {
       navigate('/teacher/dashboard', { replace: true });
     }
   };

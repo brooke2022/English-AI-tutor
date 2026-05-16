@@ -4,9 +4,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useAuthStore';
 import LanguageSwitcher from './LanguageSwitcher';
+import NotificationBell from './NotificationBell';
+import { useRealtimeNotifications } from '../hooks/useNotifications';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
+  useRealtimeNotifications(isAuthenticated);
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -78,6 +81,7 @@ export default function Navbar() {
           {/* Right side: language switcher + auth */}
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
+            {isAuthenticated && <NotificationBell />}
 
             {!isAuthenticated ? (
               <>

@@ -1,0 +1,194 @@
+// English-AI-Tutor backend schema
+// PostgreSQL + Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────── Enums ────────────────────────────
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum TeacherStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// ──────────────────────────── Core User ────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  role          Role
+  timezone      String
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  studentProfile    StudentProfile?
+  teacherProfile    TeacherProfile?
+  refreshTokens     RefreshToken[]
+  bookingsAsStudent Booking[]       @relation("StudentBookings")
+  reviewsWritten    Review[]        @relation("ReviewAuthor")
+  favoriteTeachers  Favorite[]      @relation("StudentFavorites")
+  favoritedBy       Favorite[]      @relation("TeacherFavorited")
+  notifications     Notification[]
+
+  @@index([role])
+}
+
+// ──────────────────────────── Profiles ────────────────────────────
+
+model StudentProfile {
+  userId         String  @id
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nativeLanguage String?
+  learningGoals  Json    @default("[]") // string[]
+  totalHours     Int     @default(0)
+  city           String?
+  targetLevel    String?
+}
+
+model TeacherProfile {
+  userId      String        @id
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country     String
+  countryCode String
+  intro       String        @db.Text
+  yearsExp    Int?
+  education   String?
+  hourlyRate  Decimal       @db.Decimal(10, 2)
+  trialPrice  Decimal       @db.Decimal(10, 2)
+  videoUrl    String?
+  whatsapp    String?
+  status      TeacherStatus @default(PENDING)
+  ratingAvg   Decimal?      @db.Decimal(3, 2)
+  reviewCount Int           @default(0)
+  submittedAt DateTime      @default(now())
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+
+  tags        TeacherTag[]
+  weeklySlots WeeklySlot[]
+  bookings    Booking[]
+  reviews     Review[]
+
+  @@index([status])
+  @@index([countryCode])
+}
+
+model TeacherTag {
+  teacherId String
+  tag       String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+
+  @@id([teacherId, tag])
+  @@index([tag])
+}
+
+// ──────────────────────────── Availability ────────────────────────────
+
+model WeeklySlot {
+  id        String         @id @default(cuid())
+  teacherId String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  dayOfWeek Int            // 0=Sun .. 6=Sat
+  hour      Int            // 0..23
+
+  @@unique([teacherId, dayOfWeek, hour])
+}
+
+// ──────────────────────────── Booking ────────────────────────────
+
+model Booking {
+  id              String         @id @default(cuid())
+  studentId       String
+  student         User           @relation("StudentBookings", fields: [studentId], references: [id])
+  teacherId       String
+  teacherProfile  TeacherProfile @relation(fields: [teacherId], references: [userId])
+  slotTime        DateTime
+  type            String         @default("Trial Lesson")
+  status          BookingStatus  @default(PENDING)
+  meetingUrl      String?
+  rejectionReason String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  review Review?
+
+  @@unique([teacherId, slotTime])
+  @@index([studentId, status])
+  @@index([teacherId, status])
+}
+
+// ──────────────────────────── Reviews ────────────────────────────
+
+model Review {
+  id        String         @id @default(cuid())
+  bookingId String         @unique
+  booking   Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User           @relation("ReviewAuthor", fields: [studentId], references: [id])
+  teacherId String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [userId])
+  rating    Int            // 1..5
+  comment   String?        @db.Text
+  createdAt DateTime       @default(now())
+
+  @@index([teacherId, createdAt])
+}
+
+// ──────────────────────────── Misc ────────────────────────────
+
+model Favorite {
+  studentId String
+  teacherId String
+  student   User   @relation("StudentFavorites", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher   User   @relation("TeacherFavorited", fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([studentId, teacherId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // BOOKING_CREATED | BOOKING_CONFIRMED | BOOKING_REJECTED | LESSON_REMINDER
+  payload   Json     @default("{}")
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt])
+}

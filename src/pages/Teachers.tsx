@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import TeacherCard from '../components/TeacherCard';
-import { useTeachersStore } from '../store/useTeachersStore';
+import { useTeachers } from '../hooks/useTeachers';
 
 const TAGS = ['All', 'IELTS', 'Business', 'Kids', 'Conversational', 'Beginners', 'Job Interview'];
 
@@ -12,8 +12,7 @@ export default function Teachers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLocalTime, setShowLocalTime] = useState(true);
 
-  const allTeachers = useTeachersStore((s) => s.teachers);
-  const teachers = allTeachers.filter((t) => t.status === 'approved');
+  const { data: teachers = [], isLoading } = useTeachers();
 
   const filteredTeachers = teachers.filter((teacher) => {
     const matchesTag = activeTag === 'All' || teacher.tags.includes(activeTag);
@@ -73,7 +72,9 @@ export default function Teachers() {
 
       {/* Teacher Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        {filteredTeachers.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-24 text-gray-500">Loading...</div>
+        ) : filteredTeachers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredTeachers.map((teacher) => (
               <React.Fragment key={teacher.id}>

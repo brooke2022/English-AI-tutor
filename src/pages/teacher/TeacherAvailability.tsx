@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle2, Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useTeachersStore } from '../../store/useTeachersStore';
+import { useTeacher, useSetAvailability } from '../../hooks/useTeachers';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7AM–8PM
+// Maps display day → backend dayOfWeek (0=Sun..6=Sat per JS getUTCDay)
 const DAY_INDEX: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
 type SlotStatus = 'available' | 'booked';
@@ -15,44 +16,27 @@ function slotKey(day: string, hour: number) {
   return `${day}-${hour}`;
 }
 
-function generateUpcomingSlots(availableKeys: string[]): string[] {
-  const slots: string[] = [];
-  const now = new Date();
-
-  for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
-    for (const key of availableKeys) {
-      const [dayStr, hourStr] = key.split('-');
-      const targetDay = DAY_INDEX[dayStr];
-      const targetHour = parseInt(hourStr);
-
-      const base = new Date(now);
-      base.setHours(0, 0, 0, 0);
-      let daysAhead = targetDay - base.getDay();
-      if (daysAhead < 0) daysAhead += 7;
-      base.setDate(base.getDate() + daysAhead + weekOffset * 7);
-      base.setHours(targetHour, 0, 0, 0);
-
-      if (base > now) {
-        slots.push(base.toISOString());
-      }
-    }
-  }
-
-  return slots.sort();
-}
-
 export default function TeacherAvailability() {
   const { user } = useAuthStore();
   const { t } = useTranslation();
-  const teacherListing = useTeachersStore((s) => user ? s.getTeacherByUserId(user.id) : undefined);
-  const updateTeacher = useTeachersStore((s) => s.updateTeacher);
+  const { data: teacher } = useTeacher(user?.id);
+  const setAvailMut = useSetAvailability();
 
-  const [slots, setSlots] = useState<Slots>(() => {
-    const initial: Slots = {};
-    (teacherListing?.weeklySlots ?? []).forEach((k) => { initial[k] = 'available'; });
-    return initial;
-  });
+  const [slots, setSlots] = useState<Slots>({});
   const [saved, setSaved] = useState(false);
+
+  // Load current weeklySlots ("1-9" format = dayOfWeek-hour) into UI keys (e.g. "Mon-9")
+  useEffect(() => {
+    if (!teacher?.weeklySlots) return;
+    const initial: Slots = {};
+    for (const key of teacher.weeklySlots) {
+      const [dowStr, hourStr] = key.split('-');
+      const dow = parseInt(dowStr, 10);
+      const dayName = Object.entries(DAY_INDEX).find(([, v]) => v === dow)?.[0];
+      if (dayName) initial[slotKey(dayName, parseInt(hourStr, 10))] = 'available';
+    }
+    setSlots(initial);
+  }, [teacher?.weeklySlots]);
 
   const toggle = (day: string, hour: number) => {
     const key = slotKey(day, hour);
@@ -65,18 +49,20 @@ export default function TeacherAvailability() {
     });
   };
 
-  const handleSave = () => {
-    if (teacherListing) {
-      const availableKeys = Object.entries(slots)
-        .filter(([, v]) => v === 'available')
-        .map(([k]) => k);
-      updateTeacher(teacherListing.id, {
-        weeklySlots: availableKeys,
-        availableSlots: generateUpcomingSlots(availableKeys),
+  const handleSave = async () => {
+    const slotsPayload = Object.entries(slots)
+      .filter(([, v]) => v === 'available')
+      .map(([k]) => {
+        const [dayStr, hourStr] = k.split('-');
+        return { dayOfWeek: DAY_INDEX[dayStr], hour: parseInt(hourStr, 10) };
       });
+    try {
+      await setAvailMut.mutateAsync(slotsPayload);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      console.error(err);
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
   };
 
   const copyLastWeek = () => {

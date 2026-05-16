@@ -1,28 +1,21 @@
 import { Link } from 'react-router-dom';
-import { Calendar, Users, Star, DollarSign, Video, ChevronRight, Clock, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { Calendar, Users, Star, DollarSign, Video, ChevronRight, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useTeachersStore } from '../../store/useTeachersStore';
-import { useStore } from '../../store/useStore';
+import { useBookings } from '../../hooks/useBookings';
 import { formatToLocalTime } from '../../utils/time';
 
 export default function TeacherDashboard() {
   const { user } = useAuthStore();
   const { t } = useTranslation();
-  const { bookedLessons } = useStore();
+  const { data: myBookings = [] } = useBookings();
 
-  const teacherListing = useTeachersStore((s) => user ? s.getTeacherByUserId(user.id) : undefined);
-  const profileStatus = teacherListing?.status;
+  // Phase 1: skip the pending/rejected banners since admin approval flow is in Phase 2.
 
-  const myBookings = teacherListing
-    ? bookedLessons.filter((l) => l.tutorId === teacherListing.id)
-    : [];
-
-  const pendingBookings = myBookings.filter((l) => l.status === 'pending');
+  const pendingBookings = myBookings.filter((l) => l.status === 'PENDING');
   const todayBookings = myBookings.filter((l) => {
     const today = new Date().toDateString();
-    return (l.status === 'confirmed' || l.status === 'upcoming')
-      && new Date(l.time).toDateString() === today;
+    return l.status === 'CONFIRMED' && new Date(l.slotTime).toDateString() === today;
   });
 
   const hour = new Date().getHours();
@@ -31,32 +24,6 @@ export default function TeacherDashboard() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
-        {/* Profile Status Banner */}
-        {profileStatus === 'pending' && (
-          <div className="mb-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-amber-800">
-            <Info className="w-5 h-5 mt-0.5 shrink-0 text-amber-500" />
-            <div>
-              <p className="font-semibold text-sm">{t('teacher.dashboard.pendingMsg')}</p>
-              <p className="text-sm mt-0.5 text-amber-700">{t('teacher.dashboard.pendingDetail')}</p>
-            </div>
-          </div>
-        )}
-        {profileStatus === 'rejected' && (
-          <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-red-800">
-            <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0 text-red-500" />
-            <div>
-              <p className="font-semibold text-sm">{t('teacher.dashboard.rejectedMsg')}</p>
-              <p className="text-sm mt-0.5 text-red-700">{t('teacher.dashboard.rejectedDetail')}</p>
-            </div>
-          </div>
-        )}
-        {profileStatus === 'approved' && (
-          <div className="mb-6 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3 text-emerald-700 w-fit">
-            <CheckCircle2 className="w-4 h-4" />
-            <span className="text-sm font-semibold">{t('teacher.dashboard.profileLive')}</span>
-          </div>
-        )}
-
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -68,10 +35,10 @@ export default function TeacherDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {[
-            { label: t('teacher.dashboard.upcoming'), value: String(myBookings.filter(l => l.status === 'confirmed' || l.status === 'upcoming').length), icon: <Calendar className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-50' },
+            { label: t('teacher.dashboard.upcoming'), value: String(myBookings.filter(l => l.status === 'CONFIRMED').length), icon: <Calendar className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-50' },
             { label: t('teacher.dashboard.totalStudents'), value: String(new Set(myBookings.map(l => l.studentId)).size), icon: <Users className="w-5 h-5 text-emerald-600" />, bg: 'bg-emerald-50' },
-            { label: t('teacher.dashboard.avgRating'), value: teacherListing ? `${teacherListing.rating} ★` : '—', icon: <Star className="w-5 h-5 text-amber-500" />, bg: 'bg-amber-50' },
-            { label: t('teacher.dashboard.monthlyEarnings'), value: teacherListing ? `$${teacherListing.price * myBookings.filter(l => l.status === 'completed').length}` : '$0', icon: <DollarSign className="w-5 h-5 text-violet-600" />, bg: 'bg-violet-50' },
+            { label: t('teacher.dashboard.avgRating'), value: '—', icon: <Star className="w-5 h-5 text-amber-500" />, bg: 'bg-amber-50' },
+            { label: t('teacher.dashboard.monthlyEarnings'), value: `${myBookings.filter(l => l.status === 'COMPLETED').length} lessons`, icon: <DollarSign className="w-5 h-5 text-violet-600" />, bg: 'bg-violet-50' },
           ].map(({ label, value, icon, bg }) => (
             <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
               <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-4`}>{icon}</div>
@@ -100,11 +67,11 @@ export default function TeacherDashboard() {
                     <div key={b.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-violet-500 rounded-xl flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">{b.studentName[0]}</span>
+                          <span className="text-white font-bold text-sm">{b.student.name[0]}</span>
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900 text-sm">{b.studentName}</p>
-                          <p className="text-xs text-gray-500">{b.type} · {formatToLocalTime(b.time)}</p>
+                          <p className="font-semibold text-gray-900 text-sm">{b.student.name}</p>
+                          <p className="text-xs text-gray-500">{b.type} · {formatToLocalTime(b.slotTime)}</p>
                         </div>
                       </div>
                       <Link
@@ -133,10 +100,10 @@ export default function TeacherDashboard() {
                       <div className="flex items-center gap-4">
                         <div className="flex flex-col items-center justify-center w-14 h-14 bg-blue-50 rounded-xl border border-blue-100 shrink-0">
                           <Clock className="w-4 h-4 text-blue-500 mb-0.5" />
-                          <span className="text-xs font-bold text-blue-700">{formatToLocalTime(lesson.time)}</span>
+                          <span className="text-xs font-bold text-blue-700">{formatToLocalTime(lesson.slotTime)}</span>
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900 text-sm">{lesson.studentName}</p>
+                          <p className="font-semibold text-gray-900 text-sm">{lesson.student.name}</p>
                           <p className="text-xs text-gray-500">{lesson.type}</p>
                         </div>
                       </div>

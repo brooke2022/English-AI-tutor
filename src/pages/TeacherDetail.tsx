@@ -2,61 +2,63 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, Video, Clock, Globe, Calendar as CalendarIcon, CheckCircle2, GraduationCap, Award, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { formatToLocalTime, formatToLocalDate, groupSlotsByDay, getUserTimezone } from '../utils/time';
-import { useTeachersStore } from '../store/useTeachersStore';
+import { useTeacher } from '../hooks/useTeachers';
+import { useCreateBooking } from '../hooks/useBookings';
 
 export default function TeacherDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const addLesson = useStore((state) => state.addLesson);
   const { user } = useAuthStore();
-  const updateTeacher = useTeachersStore((s) => s.updateTeacher);
 
-  const teacher = useTeachersStore((s) => s.teachers.find((t) => t.id === id && t.status === 'approved'));
+  const { data: teacher, isLoading } = useTeacher(id);
+  const createBooking = useCreateBooking();
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [isBooking, setIsBooking] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [bookError, setBookError] = useState<string | null>(null);
 
   const groupedSlots = teacher ? groupSlotsByDay(teacher.availableSlots) : {};
   const days = Object.keys(groupedSlots);
   const [selectedDay, setSelectedDay] = useState(days[0] ?? '');
 
+  if (isLoading) {
+    return <div className="p-12 text-center text-gray-500">Loading...</div>;
+  }
   if (!teacher) {
     return <div className="p-12 text-center text-gray-500">Teacher not found</div>;
   }
 
-  const handleBook = () => {
+  const handleBook = async () => {
     if (!selectedSlot) return;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
 
-    setIsBooking(true);
-
-    setTimeout(() => {
-      addLesson({
-        id: `lesson-${Date.now()}`,
-        tutorId: teacher.id,
-        studentId: user?.id ?? 'guest',
-        studentName: user?.name ?? 'Student',
-        time: selectedSlot,
+    setBookError(null);
+    try {
+      await createBooking.mutateAsync({
+        teacherId: teacher.id,
+        slotTime: selectedSlot,
         type: 'Trial Lesson',
-        status: 'pending',
       });
 
-      updateTeacher(teacher.id, {
-        availableSlots: teacher.availableSlots.filter((s) => s !== selectedSlot),
-      });
-
-      setIsBooking(false);
       setShowSuccess(true);
-
       setTimeout(() => {
         setShowSuccess(false);
         navigate('/my-courses');
       }, 4000);
-    }, 800);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Booking failed. Please try again.';
+      setBookError(msg);
+    }
   };
+
+  const isBooking = createBooking.isPending;
 
   const isYouTube = teacher.videoUrl && (teacher.videoUrl.includes('youtube.com') || teacher.videoUrl.includes('youtu.be'));
 
@@ -217,6 +219,11 @@ export default function TeacherDetail() {
               ))}
             </div>
 
+            {bookError && (
+              <div className="mb-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+                {bookError}
+              </div>
+            )}
             <button
               onClick={handleBook}
               disabled={!selectedSlot || isBooking}

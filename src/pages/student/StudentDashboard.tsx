@@ -3,26 +3,22 @@ import { Link } from 'react-router-dom';
 import { Calendar, Clock, Star, Sparkles, BookOpen, ChevronRight, User, Video, ExternalLink, X, Copy, CheckCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useStore } from '../../store/useStore';
 import { formatToLocalDate, formatToLocalTime } from '../../utils/time';
-import { useTeachersStore } from '../../store/useTeachersStore';
+import { useBookings } from '../../hooks/useBookings';
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
-  const { bookedLessons } = useStore();
   const { t } = useTranslation();
-  const teachers = useTeachersStore((s) => s.teachers);
+  const { data: bookings = [] } = useBookings();
   const [modalLessonId, setModalLessonId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const modalLesson = bookedLessons.find((l) => l.id === modalLessonId);
-
-  const getTeacher = (tutorId: string) => teachers.find((t) => t.id === tutorId);
+  const modalLesson = bookings.find((l) => l.id === modalLessonId);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('common.goodMorning') : hour < 17 ? t('common.goodAfternoon') : t('common.goodEvening');
 
-  const activeLessons = bookedLessons.filter((l) => l.status === 'pending' || l.status === 'confirmed' || l.status === 'upcoming');
+  const activeLessons = bookings.filter((l) => l.status === 'PENDING' || l.status === 'CONFIRMED');
   const recentLessons = activeLessons.slice(0, 3);
 
   return (
@@ -53,7 +49,9 @@ export default function StudentDashboard() {
               </div>
               <span className="text-sm font-medium text-gray-500">{t('student.dashboard.totalHours')}</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900">0</div>
+            <div className="text-3xl font-bold text-gray-900">
+              {bookings.filter((b) => b.status === 'COMPLETED').length}
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -92,43 +90,49 @@ export default function StudentDashboard() {
             ) : (
               <div className="space-y-3">
                 {recentLessons.map((lesson) => {
-                  const teacher = getTeacher(lesson.tutorId);
-                  if (!teacher) return null;
+                  const teacherName = lesson.teacherProfile.user.name;
+                  const teacherAvatar = lesson.teacherProfile.user.avatarUrl;
                   return (
                     <div
                       key={lesson.id}
                       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-center gap-4">
-                        <img
-                          src={teacher.avatar}
-                          alt={teacher.name}
-                          className="w-12 h-12 rounded-xl object-cover"
-                          referrerPolicy="no-referrer"
-                        />
+                        {teacherAvatar ? (
+                          <img
+                            src={teacherAvatar}
+                            alt={teacherName}
+                            className="w-12 h-12 rounded-xl object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center text-white font-bold">
+                            {teacherName[0]}
+                          </div>
+                        )}
                         <div>
                           <div className="flex items-center gap-2 mb-0.5">
-                            <p className="font-semibold text-gray-900">{teacher.name}</p>
-                            {lesson.status === 'pending' && (
+                            <p className="font-semibold text-gray-900">{teacherName}</p>
+                            {lesson.status === 'PENDING' && (
                               <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded">
                                 {t('myCourses.status.pending', { defaultValue: 'Pending' })}
                               </span>
                             )}
-                            {lesson.status === 'confirmed' && (
+                            {lesson.status === 'CONFIRMED' && (
                               <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded">
                                 {t('myCourses.status.confirmed', { defaultValue: 'Confirmed' })}
                               </span>
                             )}
                           </div>
                           <p className="text-sm text-gray-500">
-                            {formatToLocalDate(lesson.time)} · {formatToLocalTime(lesson.time)}
+                            {formatToLocalDate(lesson.slotTime)} · {formatToLocalTime(lesson.slotTime)}
                           </p>
-                          {lesson.status === 'pending' && (
+                          {lesson.status === 'PENDING' && (
                             <p className="text-xs text-amber-600 mt-0.5">{t('myCourses.pendingApproval')}</p>
                           )}
                         </div>
                       </div>
-                      {lesson.status === 'confirmed' && lesson.meetingUrl && (
+                      {lesson.status === 'CONFIRMED' && lesson.meetingUrl && (
                         <button
                           onClick={() => { setModalLessonId(lesson.id); setCopied(false); }}
                           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors flex items-center gap-1.5 shrink-0"
@@ -173,8 +177,7 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Meeting link modal */}
-      {modalLessonId && modalLesson && (
+      {modalLessonId && modalLesson && modalLesson.meetingUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
           onClick={() => setModalLessonId(null)}
@@ -194,7 +197,7 @@ export default function StudentDashboard() {
             </div>
 
             <p className="text-sm text-gray-500 mb-1">
-              {formatToLocalDate(modalLesson.time)} {formatToLocalTime(modalLesson.time)}
+              {formatToLocalDate(modalLesson.slotTime)} {formatToLocalTime(modalLesson.slotTime)}
             </p>
 
             <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 break-all text-sm text-blue-700 font-mono">

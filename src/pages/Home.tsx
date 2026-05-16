@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import { Sparkles, Globe, Users, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import TeacherCard from '../components/TeacherCard';
-import { useTeachersStore } from '../store/useTeachersStore';
+import { useTeachers } from '../hooks/useTeachers';
 
 export default function Home() {
   const { t } = useTranslation();
-  const allTeachers = useTeachersStore((s) => s.teachers);
-  const featuredTeachers = allTeachers.filter((t) => t.status === 'approved').slice(0, 3);
+  const { data: allTeachers = [] } = useTeachers();
+  const featuredTeachers = allTeachers.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">

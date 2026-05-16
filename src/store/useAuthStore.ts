@@ -1,36 +1,26 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { AxiosError } from 'axios';
 import { User, RegisterStudentData, RegisterTeacherData } from '../types';
+import { api, apiGet, apiPost, setAccessToken, getAccessToken } from '../lib/api';
+import { queryClient } from '../lib/queryClient';
 
-const MOCK_USERS: (User & { password: string })[] = [
-  {
-    id: 'user-student-1',
-    email: 'student@test.com',
-    password: 'password123',
-    name: 'Alex Chen',
-    role: 'student',
-    timezone: 'Asia/Shanghai',
-    createdAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'user-teacher-1',
-    email: 'teacher@test.com',
-    password: 'password123',
-    name: 'Maria Santos',
-    role: 'teacher',
-    timezone: 'Asia/Manila',
-    createdAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'user-admin-1',
-    email: 'admin@tutorai.com',
-    password: 'admin123',
-    name: 'Admin',
-    role: 'admin',
-    timezone: 'UTC',
-    createdAt: '2026-01-01T00:00:00Z',
-  },
-];
+type ApiRole = 'STUDENT' | 'TEACHER' | 'ADMIN';
+type ClientRole = 'student' | 'teacher' | 'admin';
+
+interface ApiUser {
+  id: string;
+  email: string;
+  name: string;
+  role: ApiRole;
+  timezone: string;
+  avatarUrl?: string | null;
+  createdAt?: string;
+}
+
+interface AuthResponse {
+  accessToken: string;
+  user: ApiUser;
+}
 
 interface AuthState {
   user: User | null;
@@ -40,59 +30,135 @@ interface AuthState {
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterStudentData | RegisterTeacherData, role: 'student' | 'teacher') => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   clearError: () => void;
+  bootstrap: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
+function normalizeUser(u: ApiUser): User {
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    role: u.role.toLowerCase() as ClientRole,
+    timezone: u.timezone,
+    avatar: u.avatarUrl ?? undefined,
+    createdAt: u.createdAt ?? new Date().toISOString(),
+  };
+}
 
-      login: async (email, password) => {
-        set({ isLoading: true, error: null });
-        await new Promise((r) => setTimeout(r, 800));
-        const found = MOCK_USERS.find((u) => u.email === email && u.password === password);
-        if (!found) {
-          set({ isLoading: false, error: 'Invalid email or password.' });
-          return;
-        }
-        const { password: _p, ...user } = found;
-        set({ user, token: `mock-token-${user.id}`, isAuthenticated: true, isLoading: false });
-      },
+function extractError(err: unknown, fallback: string): string {
+  if (err instanceof AxiosError) {
+    const msg = err.response?.data?.message;
+    if (Array.isArray(msg)) return msg.join(', ');
+    if (typeof msg === 'string') return msg;
+  }
+  return fallback;
+}
 
-      register: async (data, role) => {
-        set({ isLoading: true, error: null });
-        await new Promise((r) => setTimeout(r, 1000));
-        const user: User = {
-          id: `user-${Date.now()}`,
-          email: data.email,
-          name: data.name,
-          role,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          createdAt: new Date().toISOString(),
-        };
-        set({ user, token: `mock-token-${user.id}`, isAuthenticated: true, isLoading: false });
-      },
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  token: getAccessToken(),
+  isAuthenticated: !!getAccessToken(),
+  isLoading: false,
+  error: null,
 
-      logout: () => set({ user: null, token: null, isAuthenticated: false, error: null }),
+  login: async (email, password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await apiPost<AuthResponse>('/auth/login', { email, password });
+      setAccessToken(res.accessToken);
+      set({
+        user: normalizeUser(res.user),
+        token: res.accessToken,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (err) {
+      set({ isLoading: false, error: extractError(err, 'Invalid email or password.') });
+    }
+  },
 
-      updateProfile: async (data) => {
-        set({ isLoading: true });
-        await new Promise((r) => setTimeout(r, 600));
-        set((state) => ({
-          user: state.user ? { ...state.user, ...data } : null,
-          isLoading: false,
-        }));
-      },
+  register: async (data, role) => {
+    set({ isLoading: true, error: null });
+    try {
+      const body: Record<string, unknown> = {
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        role: role.toUpperCase(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
+      if (role === 'student') {
+        const s = data as RegisterStudentData;
+        body.nativeLanguage = s.nativeLanguage;
+        body.learningGoals = s.learningGoals;
+      } else {
+        const t = data as RegisterTeacherData;
+        body.country = t.country;
+        body.intro = t.intro;
+        body.tags = t.tags;
+        body.hourlyRate = t.price;
+        body.trialPrice = t.trialPrice;
+        body.countryCode = (t as { countryCode?: string }).countryCode;
+      }
+      const res = await apiPost<AuthResponse>('/auth/register', body);
+      setAccessToken(res.accessToken);
+      set({
+        user: normalizeUser(res.user),
+        token: res.accessToken,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (err) {
+      set({ isLoading: false, error: extractError(err, 'Registration failed.') });
+    }
+  },
 
-      clearError: () => set({ error: null }),
-    }),
-    { name: 'ai-tutor-auth' }
-  )
-);
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // ignore
+    }
+    setAccessToken(null);
+    queryClient.clear();
+    set({ user: null, token: null, isAuthenticated: false, error: null });
+  },
+
+  updateProfile: async (data) => {
+    set({ isLoading: true });
+    try {
+      const body: Record<string, unknown> = {};
+      if (data.name !== undefined) body.name = data.name;
+      if (data.timezone !== undefined) body.timezone = data.timezone;
+      if (data.avatar !== undefined) body.avatarUrl = data.avatar;
+      const res = await api.patch<ApiUser>('/users/me', body);
+      set((state) => ({
+        user: state.user ? { ...state.user, ...normalizeUser(res.data) } : normalizeUser(res.data),
+        isLoading: false,
+      }));
+    } catch (err) {
+      set({ isLoading: false, error: extractError(err, 'Update failed.') });
+    }
+  },
+
+  clearError: () => set({ error: null }),
+
+  bootstrap: async () => {
+    if (!getAccessToken()) return;
+    try {
+      const me = await apiGet<ApiUser>('/auth/me');
+      set({ user: normalizeUser(me), isAuthenticated: true });
+    } catch {
+      // Token might be expired and refresh failed → clear
+      setAccessToken(null);
+      set({ user: null, token: null, isAuthenticated: false });
+    }
+    void get();
+  },
+}));
+
+// Bootstrap on app load
+void useAuthStore.getState().bootstrap();

@@ -3,39 +3,38 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Search, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import TeacherCard from '../components/TeacherCard';
-import { useTeachersStore } from '../store/useTeachersStore';
-import { TeacherListing } from '../types';
+import { useTeachers } from '../hooks/useTeachers';
+import { useAiMatch } from '../hooks/useAiMatch';
+import { Teacher } from '../types';
 
 const CHIPS = ['IELTS Speaking', 'Job Interview', 'Business English', 'Kids Beginner'];
 
 export default function AIMatch() {
   const { t } = useTranslation();
-  const allTeachers = useTeachersStore((s) => s.teachers);
-  const approved = allTeachers.filter((t) => t.status === 'approved');
+  const { data: approved = [] } = useTeachers();
+  const aiMatch = useAiMatch();
   const [query, setQuery] = useState('');
-  const [isMatching, setIsMatching] = useState(false);
-  const [matchStatus, setMatchStatus] = useState('');
-  const [results, setResults] = useState<TeacherListing[] | null>(null);
+  const [results, setResults] = useState<Teacher[] | null>(null);
+  const [reasoning, setReasoning] = useState<string>('');
+  const isMatching = aiMatch.isPending;
+  const matchStatus = isMatching ? t('aiMatch.analyzing') : '';
 
-  const handleMatch = () => {
+  const handleMatch = async () => {
     if (!query.trim()) return;
-
-    setIsMatching(true);
     setResults(null);
-    setMatchStatus(t('aiMatch.analyzing'));
-
-    setTimeout(() => {
-      setMatchStatus(t('aiMatch.filtering'));
-    }, 1000);
-
-    setTimeout(() => {
-      setMatchStatus(t('aiMatch.foundBest'));
-    }, 2000);
-
-    setTimeout(() => {
-      setIsMatching(false);
+    setReasoning('');
+    try {
+      const res = await aiMatch.mutateAsync({ goals: query });
+      const matched = res.teacherIds
+        .map((id) => approved.find((t) => t.id === id))
+        .filter((t): t is Teacher => !!t);
+      setResults(matched.slice(0, 3));
+      setReasoning(res.reasoning);
+    } catch (err) {
+      console.error(err);
       setResults(approved.slice(0, 2));
-    }, 3000);
+      setReasoning('Fallback recommendations (AI service unavailable).');
+    }
   };
 
   return (
@@ -118,10 +117,15 @@ export default function AIMatch() {
               transition={{ duration: 0.5, staggerChildren: 0.1 }}
               className="space-y-6"
             >
-              <div className="flex items-center justify-center gap-2 text-emerald-600 font-semibold mb-8">
+              <div className="flex items-center justify-center gap-2 text-emerald-600 font-semibold mb-4">
                 <CheckCircle2 className="w-6 h-6" />
                 <span>{t('aiMatch.foundMatches')}</span>
               </div>
+              {reasoning && (
+                <p className="text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
+                  {reasoning}
+                </p>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {results.map((teacher, index) => (
